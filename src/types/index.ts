@@ -53,6 +53,30 @@ export interface UserPreferences {
   locale: string;
 }
 
+export interface HomepageSection {
+  slug: string;
+  title: string;
+  description?: string;
+  stories: Article[];
+  /** Link to the matching category page, when the section maps 1:1 to a category slug. */
+  href?: string;
+}
+
+export interface BriefItem {
+  id: string;
+  headline: string;
+  summary: string;
+}
+
+export interface HomepageFeed {
+  edition: Edition;
+  heroStory: Article | null;
+  secondaryStories: Article[];
+  sections: HomepageSection[];
+  personalized: Article[];
+  brief: BriefItem[];
+}
+
 export type ChatRole = "user" | "assistant" | "system";
 
 export interface ChatMessage {
