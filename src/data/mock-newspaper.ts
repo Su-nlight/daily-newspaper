@@ -5,6 +5,7 @@ import type {
   Edition,
   SavedStory,
   Source,
+  StoryDetail,
   Topic,
   UserPreferences,
 } from "@/types";
@@ -257,6 +258,138 @@ export const mockTodayEdition: Edition = {
   summary:
     "Today's edition tracks policy momentum in AI, growing software supply-chain threats, and new research partnerships shaping global technology strategy.",
   stories: mockArticles.slice(0, 4),
+};
+
+/**
+ * Hand-authored long-form detail content for the story-detail page
+ * (Module 04). Keyed by Article.id. Not every article has an entry — see
+ * `deriveStoryDetail` in lib/api/client.ts for the fallback used for the
+ * rest, so /story/[id] never has an empty section for a real article id.
+ */
+export const mockStoryDetails: Record<
+  string,
+  Pick<StoryDetail, "dek" | "whatHappened" | "whyItMatters" | "keyFacts" | "citations">
+> = {
+  "story-ai-policy-2026": {
+    dek: "Quarterly audits would apply to AI systems used in lending, diagnostics, and other high-impact decisions.",
+    whatHappened:
+      "India's technology ministry published a draft framework requiring enterprises to submit quarterly audits for AI systems used in finance and healthcare decision-making. The draft covers model documentation, bias testing thresholds, and incident-reporting timelines, with a 60-day public comment window before rules are finalized.",
+    whyItMatters:
+      "This is the first sector-specific AI audit regime proposed by an Indian regulator rather than a general-purpose AI law, and it mirrors approaches already emerging in the EU and Singapore. Teams shipping AI features into regulated Indian markets should expect documentation and testing requirements to become a procurement checklist item well before enforcement begins.",
+    keyFacts: [
+      "Applies to AI systems used in lending, insurance underwriting, and clinical decision support.",
+      "Quarterly audit submissions would be required, with a named accountable officer per deployment.",
+      "Public comment period runs 60 days from the draft's publication date.",
+      "No penalty structure has been proposed yet; that is expected in a follow-up draft.",
+    ],
+    citations: [
+      {
+        publisher: "Tech Ledger",
+        publishedAt: "2026-09-22T07:30:00Z",
+        url: "https://techledger.example.com/ai-policy-audits",
+      },
+      {
+        publisher: "Ministry of Electronics and IT (press note)",
+        publishedAt: "2026-09-22T06:00:00Z",
+        url: "https://globalwire.example.com/meity-ai-draft-framework",
+      },
+    ],
+  },
+  "story-ransomware-shift": {
+    dek: "Attackers are increasingly targeting build pipelines and package registries instead of production databases.",
+    whatHappened:
+      "Security researchers tracking a cluster of ransomware operators found a marked shift toward compromising CI/CD infrastructure and public package registries, then timing extortion demands to coincide with scheduled release windows to maximize pressure on engineering teams.",
+    whyItMatters:
+      "Traditional ransomware defenses focus on endpoint and database protection; this shift means build systems — often treated as internal infrastructure with looser access controls — are now a primary target. Teams that haven't extended zero-trust practices to CI runners and artifact registries are more exposed than they may realize.",
+    keyFacts: [
+      "Attacks cluster around scheduled release windows to increase extortion leverage.",
+      "Compromised build credentials were the most common initial access vector observed.",
+      "Analysts recommend short-lived, scoped credentials for CI runners as a primary mitigation.",
+    ],
+    citations: [
+      {
+        publisher: "Security Post",
+        publishedAt: "2026-09-22T09:10:00Z",
+        url: "https://securitypost.example.com/supply-chain-extortion",
+      },
+    ],
+  },
+  "story-rust-backend-scale": {
+    dek: "The migration cut ingestion-tier compute spend while keeping the same throughput under peak load.",
+    whatHappened:
+      "The team behind a widely used open-source observability platform published benchmarks comparing their Go-based ingestion service to a Rust rewrite completed over two quarters, reporting lower per-node CPU usage and reduced garbage-collection-related latency spikes under sustained write load.",
+    whyItMatters:
+      "The benchmarks add to a growing body of public evidence from infrastructure teams evaluating Rust for latency-sensitive, high-throughput services, an area where garbage-collected languages can hit predictability limits. The published methodology also gives other teams a reference to replicate the comparison against their own workloads.",
+    keyFacts: [
+      "Migration was scoped to the ingestion tier only, not the full platform.",
+      "Benchmarks report lower peak memory and fewer GC-related latency spikes under sustained load.",
+      "The team published its benchmark harness alongside the results.",
+    ],
+    citations: [
+      {
+        publisher: "Global Wire",
+        publishedAt: "2026-09-21T19:45:00Z",
+        url: "https://globalwire.example.com/rust-backend-scale",
+      },
+    ],
+  },
+  "story-semiconductor-alliance": {
+    dek: "The corridor pairs Japanese chip-packaging expertise with Indian university research capacity.",
+    whatHappened:
+      "Japan and India signed a joint funding agreement establishing a semiconductor research corridor focused on advanced chip packaging techniques, pairing Japanese industrial partners with Indian university research groups and committing multi-year funding to shared facilities.",
+    whyItMatters:
+      "Advanced packaging — rather than leading-edge fabrication — is where much of the next wave of semiconductor performance gains is expected to come from, and this corridor positions both countries to build research capacity in that specific niche rather than competing directly with existing fabrication hubs.",
+    keyFacts: [
+      "Focus is on advanced chip packaging, not fabrication.",
+      "Funding is structured as a multi-year joint program between government and university partners.",
+      "Initial shared research facilities are planned in both countries.",
+    ],
+    citations: [
+      {
+        publisher: "Global Wire",
+        publishedAt: "2026-09-21T13:20:00Z",
+        url: "https://globalwire.example.com/semiconductor-corridor",
+      },
+    ],
+  },
+  "story-rag-benchmark": {
+    dek: "Accuracy drops sharply once retrieval-augmented systems have to search past roughly 50 pages of source material.",
+    whatHappened:
+      "A new open benchmark testing retrieval-augmented generation systems across long-document question answering found that most evaluated pipelines lost significant answer accuracy once the source corpus exceeded roughly 50 pages, even when the underlying language model supported a much longer context window.",
+    whyItMatters:
+      "The results suggest the bottleneck for long-context RAG is increasingly the retrieval step rather than the model's context window, which has implications for teams that assumed larger context windows alone would solve long-document accuracy. Hybrid retrieval strategies — combining dense retrieval with structured indexing — outperformed single-method approaches in the benchmark.",
+    keyFacts: [
+      "Accuracy drop-off begins around the 50-page mark for most evaluated pipelines.",
+      "Hybrid retrieval (dense + structured indexing) outperformed single-method retrieval.",
+      "Benchmark dataset and evaluation harness were released publicly alongside the paper.",
+    ],
+    citations: [
+      {
+        publisher: "Tech Ledger",
+        publishedAt: "2026-09-21T08:15:00Z",
+        url: "https://techledger.example.com/rag-benchmark",
+      },
+    ],
+  },
+  "story-cloud-breach-disclosure": {
+    dek: "The provider says the exposure window was limited but has not yet disclosed how many accounts were affected.",
+    whatHappened:
+      "A major cloud provider disclosed that a storage-service misconfiguration left some enterprise storage buckets exposed for a limited window. The company has not yet published an affected-account count but confirmed the exposure predates its recently rolled out default encryption-at-rest policy for new accounts.",
+    whyItMatters:
+      "Default encryption-at-rest closes one specific gap, but the disclosure is a reminder that misconfiguration — not just unpatched vulnerabilities — remains one of the most common root causes of cloud data exposure. Teams relying on the provider's default security posture rather than auditing their own bucket policies were more exposed.",
+    keyFacts: [
+      "Root cause was a storage-service misconfiguration, not an external breach.",
+      "Default encryption-at-rest for new accounts was enabled following the incident.",
+      "The provider has not yet disclosed the number of affected accounts.",
+    ],
+    citations: [
+      {
+        publisher: "Security Post",
+        publishedAt: "2026-09-22T06:05:00Z",
+        url: "https://securitypost.example.com/cloud-breach-disclosure",
+      },
+    ],
+  },
 };
 
 export const mockSavedStories: SavedStory[] = [

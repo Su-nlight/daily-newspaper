@@ -1,15 +1,20 @@
 "use client";
 
-import { useState } from "react";
-
 import { ChatPanelShell } from "@/components/chat/ChatPanelShell";
+import { useChat } from "@/components/chat/ChatProvider";
 
 export function ChatBubble() {
-  const [isOpen, setIsOpen] = useState(false);
+  const { isOpen, activeStory, openChat, closeChat, clearStoryContext } = useChat();
 
   return (
     <div className="fixed bottom-5 left-5 z-50 flex flex-col items-start gap-3">
-      {isOpen ? <ChatPanelShell onClose={() => setIsOpen(false)} /> : null}
+      {isOpen ? (
+        <ChatPanelShell
+          onClose={closeChat}
+          activeStory={activeStory}
+          onClearContext={clearStoryContext}
+        />
+      ) : null}
 
       {!isOpen ? (
         <div className="group relative">
@@ -21,7 +26,7 @@ export function ChatBubble() {
           </span>
           <button
             type="button"
-            onClick={() => setIsOpen(true)}
+            onClick={() => openChat()}
             aria-label="Ask Daily Signal AI"
             className="flex size-13 items-center justify-center rounded-full border border-border bg-accent text-accent-foreground shadow-lg transition-transform hover:scale-105"
           >

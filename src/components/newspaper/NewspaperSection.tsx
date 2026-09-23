@@ -13,6 +13,8 @@ interface NewspaperSectionProps {
   description?: string;
   stories: Article[];
   layout?: NewspaperSectionLayout;
+  /** Number of grid columns at the lg breakpoint. Only applies to layout="grid". */
+  columns?: 2 | 3;
   /** Optional link to a full category page, shown as a section-level action. */
   href?: string;
 }
@@ -22,6 +24,7 @@ export function NewspaperSection({
   description,
   stories,
   layout = "grid",
+  columns = 3,
   href,
 }: NewspaperSectionProps) {
   if (stories.length === 0) return null;
@@ -41,7 +44,9 @@ export function NewspaperSection({
       />
 
       {layout === "grid" ? (
-        <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
+        <div
+          className={`grid gap-8 sm:grid-cols-2 ${columns === 2 ? "lg:grid-cols-2" : "lg:grid-cols-3"}`}
+        >
           {stories.map((story) => (
             <StandardStory key={story.id} story={story} />
           ))}

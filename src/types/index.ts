@@ -77,6 +77,34 @@ export interface HomepageFeed {
   brief: BriefItem[];
 }
 
+export interface StoryCitation {
+  publisher: string;
+  publishedAt: string;
+  url: string;
+}
+
+export interface StoryDetail extends Article {
+  /** Short one-line subhead shown under the headline. */
+  dek: string;
+  whatHappened: string;
+  whyItMatters: string;
+  keyFacts: string[];
+  citations: StoryCitation[];
+}
+
+export interface TrendingTopic {
+  name: string;
+  count: number;
+}
+
+export interface CategoryFeed {
+  category: Category | null;
+  featuredStory: Article | null;
+  secondaryStories: Article[];
+  latestStories: Article[];
+  trendingTopics: TrendingTopic[];
+}
+
 export type ChatRole = "user" | "assistant" | "system";
 
 export interface ChatMessage {
@@ -91,4 +119,12 @@ export interface ChatConversation {
   title: string;
   messages: ChatMessage[];
   updatedAt: string;
+}
+
+/** Story context passed from a story page's "Ask AI about this story"
+ *  button into the global chat UI (components/chat/ChatProvider.tsx). */
+export interface ChatStoryContext {
+  storyId: string;
+  title: string;
+  context: string;
 }

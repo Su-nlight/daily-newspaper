@@ -3,6 +3,7 @@ import {
   mockCategories,
   mockConversation,
   mockSavedStories,
+  mockStoryDetails,
   mockTodayEdition,
   mockTopics,
 } from "@/data/mock-newspaper";
@@ -10,19 +11,77 @@ import type {
   Article,
   BriefItem,
   Category,
+  CategoryFeed,
   ChatConversation,
   Edition,
   HomepageFeed,
   SavedStory,
+  StoryDetail,
   Topic,
+  TrendingTopic,
 } from "@/types";
+import { formatCategoryLabel } from "@/lib/utils/category";
+import { formatDisplayDate } from "@/lib/utils/date";
 
 export async function getTodayEdition(): Promise<Edition> {
   return mockTodayEdition;
 }
 
-export async function getStory(id: string): Promise<Article | null> {
-  return mockArticles.find((article) => article.id === id) ?? null;
+/**
+ * Builds a full StoryDetail from an Article for ids without hand-authored
+ * content in mockStoryDetails, so /story/[id] never renders an empty
+ * section for an article that legitimately exists.
+ */
+function deriveStoryDetail(article: Article): Omit<StoryDetail, keyof Article> {
+  const categoryLabel = formatCategoryLabel(article.category);
+  const topicList = article.topics.join(" and ");
+
+  return {
+    dek: article.summary,
+    whatHappened: article.summary,
+    whyItMatters: topicList
+      ? `This development is relevant to readers tracking ${topicList}, and fits into broader ${categoryLabel.toLowerCase()} coverage this edition is following.`
+      : `This is part of Daily Signal's ongoing ${categoryLabel.toLowerCase()} coverage.`,
+    keyFacts: [
+      `Reported by ${article.source} on ${formatDisplayDate(article.publishedAt)}.`,
+      ...(article.topics.length > 0 ? [`Related topics: ${article.topics.join(", ")}.`] : []),
+    ],
+    citations: [
+      {
+        publisher: article.source,
+        publishedAt: article.publishedAt,
+        url: article.sourceUrl,
+      },
+    ],
+  };
+}
+
+export async function getStory(id: string): Promise<StoryDetail | null> {
+  const article = mockArticles.find((item) => item.id === id) ?? null;
+  if (!article) return null;
+
+  const detail = mockStoryDetails[id] ?? deriveStoryDetail(article);
+  return { ...article, ...detail };
+}
+
+/**
+ * Finds other articles that share topics and/or a category with the given
+ * story, ranked by relevance (shared topics weighted higher than a shared
+ * category alone). Entity-level matching isn't modeled yet — see
+ * docs/PROJECT_STATE.md.
+ */
+export async function getRelatedStories(story: Article, limit = 3): Promise<Article[]> {
+  return mockArticles
+    .filter((candidate) => candidate.id !== story.id)
+    .map((candidate) => {
+      const sharedTopics = candidate.topics.filter((topic) => story.topics.includes(topic)).length;
+      const sameCategory = candidate.category === story.category ? 1 : 0;
+      return { candidate, score: sharedTopics * 2 + sameCategory };
+    })
+    .filter(({ score }) => score > 0)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, limit)
+    .map(({ candidate }) => candidate);
 }
 
 export async function getCategory(
@@ -31,6 +90,47 @@ export async function getCategory(
   const category = mockCategories.find((item) => item.slug === slug) ?? null;
   const stories = mockArticles.filter((article) => article.category === slug);
   return { category, stories };
+}
+
+/**
+ * Composes the "/category/[slug]" data contract: a featured story, a
+ * secondary two-up area, a vertical latest feed, and trending topics
+ * computed from the category's own stories. Returns category: null when the
+ * slug doesn't match a known category, which the page treats as "category
+ * not found" rather than rendering an empty shell.
+ */
+export async function getCategoryFeed(slug: string): Promise<CategoryFeed> {
+  const { category, stories } = await getCategory(slug);
+
+  if (!category) {
+    return {
+      category: null,
+      featuredStory: null,
+      secondaryStories: [],
+      latestStories: [],
+      trendingTopics: [],
+    };
+  }
+
+  const sorted = [...stories].sort(
+    (a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime(),
+  );
+  const [featuredStory = null, ...rest] = sorted;
+  const secondaryStories = rest.slice(0, 2);
+  const latestStories = rest.slice(2);
+
+  const topicCounts = new Map<string, number>();
+  for (const story of stories) {
+    for (const topic of story.topics) {
+      topicCounts.set(topic, (topicCounts.get(topic) ?? 0) + 1);
+    }
+  }
+  const trendingTopics: TrendingTopic[] = [...topicCounts.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 6)
+    .map(([name, count]) => ({ name, count }));
+
+  return { category, featuredStory, secondaryStories, latestStories, trendingTopics };
 }
 
 export async function searchStories(query: string): Promise<Article[]> {

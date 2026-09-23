@@ -1,37 +1,42 @@
-import Link from "next/link";
+import { notFound } from "next/navigation";
 
 import { PageContainer } from "@/components/layout/PageContainer";
 import { SectionHeading } from "@/components/layout/SectionHeading";
-import { getCategory } from "@/lib/api/client";
-import { formatDisplayDate } from "@/lib/utils/date";
+import { HeroStory } from "@/components/newspaper/HeroStory";
+import { NewspaperSection } from "@/components/newspaper/NewspaperSection";
+import { TrendingTopics } from "@/components/newspaper/TrendingTopics";
+import { getCategoryFeed } from "@/lib/api/client";
 
 export default async function CategoryPage({ params }: PageProps<"/category/[slug]">) {
   const { slug } = await params;
-  const { category, stories } = await getCategory(slug);
+  const feed = await getCategoryFeed(slug);
+
+  if (!feed.category) {
+    notFound();
+  }
 
   return (
     <PageContainer>
-      <SectionHeading
-        eyebrow="Category"
-        title={category?.name ?? "Category"}
-        description={category?.description ?? "Category placeholder route for upcoming modules."}
+      <SectionHeading eyebrow="Category" title={feed.category.name} description={feed.category.description} />
+
+      {feed.featuredStory ? (
+        <HeroStory story={feed.featuredStory} />
+      ) : (
+        <p className="text-body border-t border-border pt-8 text-muted">
+          No stories in this category yet.
+        </p>
+      )}
+
+      <NewspaperSection
+        title="More in this category"
+        stories={feed.secondaryStories}
+        layout="grid"
+        columns={2}
       />
 
-      <ul className="divide-y divide-border">
-        {stories.map((story) => (
-          <li key={story.id} className="flex flex-col gap-1 py-4">
-            <h2 className="text-subheadline">
-              <Link href={`/story/${story.id}`} className="hover:underline">
-                {story.title}
-              </Link>
-            </h2>
-            <p className="text-body text-muted">{story.summary}</p>
-            <p className="text-caption">
-              {story.source} · {formatDisplayDate(story.publishedAt)}
-            </p>
-          </li>
-        ))}
-      </ul>
+      <NewspaperSection title="Latest" stories={feed.latestStories} layout="list" />
+
+      <TrendingTopics topics={feed.trendingTopics} />
     </PageContainer>
   );
 }

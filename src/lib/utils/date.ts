@@ -6,6 +6,16 @@ export function formatDisplayDate(isoDate: string): string {
   }).format(new Date(isoDate));
 }
 
+export function formatDisplayDateTime(isoDate: string): string {
+  return new Intl.DateTimeFormat("en-IN", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(new Date(isoDate));
+}
+
 export function formatRelativeTime(isoDate: string, now: Date = new Date()): string {
   const diffMs = now.getTime() - new Date(isoDate).getTime();
   const diffMinutes = Math.round(diffMs / 60000);

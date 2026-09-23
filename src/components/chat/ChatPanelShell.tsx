@@ -1,8 +1,12 @@
+import type { ChatStoryContext } from "@/types";
+
 interface ChatPanelShellProps {
   onClose: () => void;
+  activeStory?: ChatStoryContext | null;
+  onClearContext?: () => void;
 }
 
-export function ChatPanelShell({ onClose }: ChatPanelShellProps) {
+export function ChatPanelShell({ onClose, activeStory, onClearContext }: ChatPanelShellProps) {
   return (
     <div
       role="dialog"
@@ -33,11 +37,29 @@ export function ChatPanelShell({ onClose }: ChatPanelShellProps) {
         </button>
       </div>
 
+      {activeStory ? (
+        <div className="flex items-start justify-between gap-2 border-b border-border bg-background px-4 py-2.5">
+          <p className="text-caption">
+            Discussing: <span className="text-foreground">{activeStory.title}</span>
+          </p>
+          {onClearContext ? (
+            <button
+              type="button"
+              onClick={onClearContext}
+              className="text-caption shrink-0 text-accent hover:underline"
+            >
+              Clear
+            </button>
+          ) : null}
+        </div>
+      ) : null}
+
       <div className="flex flex-1 flex-col justify-end gap-3 overflow-y-auto px-4 py-4">
         <div className="max-w-[85%] self-start rounded-lg rounded-bl-sm bg-background px-3 py-2">
           <p className="text-caption text-foreground">
-            Hi — I&apos;m the Daily Signal assistant. Conversational answers over your edition are
-            coming in a later module.
+            {activeStory
+              ? `Hi — I'm the Daily Signal assistant. Conversational answers about "${activeStory.title}" are coming in a later module.`
+              : "Hi — I'm the Daily Signal assistant. Conversational answers over your edition are coming in a later module."}
           </p>
         </div>
       </div>
