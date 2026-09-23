@@ -10,10 +10,12 @@ import type {
   Article,
   BriefItem,
   Category,
+  CategoryEditionFeed,
   ChatConversation,
   Edition,
   HomepageFeed,
   SavedStory,
+  StorySourceItem,
   Topic,
 } from "@/types";
 
@@ -25,12 +27,63 @@ export async function getStory(id: string): Promise<Article | null> {
   return mockArticles.find((article) => article.id === id) ?? null;
 }
 
+export async function getRelatedStories(story: Article, limit = 4): Promise<Article[]> {
+  return mockArticles
+    .filter((candidate) => candidate.id !== story.id)
+    .map((candidate) => ({
+      article: candidate,
+      score: relatedScore(story, candidate),
+    }))
+    .filter((item) => item.score > 0)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, limit)
+    .map((item) => item.article);
+}
+
 export async function getCategory(
   slug: string,
 ): Promise<{ category: Category | null; stories: Article[] }> {
   const category = mockCategories.find((item) => item.slug === slug) ?? null;
   const stories = mockArticles.filter((article) => article.category === slug);
   return { category, stories };
+}
+
+export async function getCategoryEdition(slug: string): Promise<CategoryEditionFeed | null> {
+  const { category, stories } = await getCategory(slug);
+
+  if (!category || stories.length === 0) {
+    return null;
+  }
+
+  const sortedStories = [...stories].sort(
+    (a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime(),
+  );
+  const featuredStory = sortedStories[0];
+  const secondaryStories = sortedStories.slice(1, 3);
+  const latestStories = sortedStories.slice(1);
+
+  return {
+    category,
+    featuredStory,
+    secondaryStories,
+    latestStories,
+    trendingTopics: categoryTrendingTopics(stories),
+  };
+}
+
+export async function getStorySources(story: Article): Promise<StorySourceItem[]> {
+  if (story.sources && story.sources.length > 0) {
+    return story.sources;
+  }
+
+  return [
+    {
+      id: `${story.id}-source-primary`,
+      publisher: story.source,
+      publishedAt: story.publishedAt,
+      link: story.sourceUrl,
+    },
+  ];
 }
 
 export async function searchStories(query: string): Promise<Article[]> {
@@ -123,8 +176,8 @@ export async function getHomepageFeed(): Promise<HomepageFeed> {
       slug: "technology",
       title: "Technology",
       description: "Engineering, infrastructure, and product updates.",
-      stories: byCategorySlugs(["software-engineering"], featuredIds),
-      href: "/category/software-engineering",
+      stories: byCategorySlugs(["technology"], featuredIds),
+      href: "/category/technology",
     },
     {
       slug: "ai-research",
@@ -163,4 +216,31 @@ export async function getHomepageFeed(): Promise<HomepageFeed> {
     personalized,
     brief,
   };
+}
+
+function relatedScore(base: Article, candidate: Article): number {
+  const baseTopics = new Set(base.topics);
+  const baseEntities = new Set(base.entities ?? []);
+  const topicMatches = candidate.topics.filter((topic) => baseTopics.has(topic)).length;
+  const entityMatches = (candidate.entities ?? []).filter((entity) =>
+    baseEntities.has(entity),
+  ).length;
+  const sameCategory = base.category === candidate.category ? 1 : 0;
+
+  return topicMatches * 3 + entityMatches * 2 + sameCategory;
+}
+
+function categoryTrendingTopics(stories: Article[]): string[] {
+  const scores = new Map<string, number>();
+
+  stories.forEach((story) => {
+    story.topics.forEach((topic) => {
+      scores.set(topic, (scores.get(topic) ?? 0) + 1);
+    });
+  });
+
+  return [...scores.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5)
+    .map(([topic]) => topic);
 }

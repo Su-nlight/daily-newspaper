@@ -2,8 +2,12 @@ const CATEGORY_LABELS: Record<string, string> = {
   ai: "AI",
   research: "Research",
   cybersecurity: "Cybersecurity",
-  "software-engineering": "Technology",
+  technology: "Technology",
   world: "World",
+  india: "India",
+  business: "Business",
+  science: "Science",
+  career: "Career",
 };
 
 /** Formats a category slug (e.g. "software-engineering") for display without

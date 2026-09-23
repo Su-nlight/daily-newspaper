@@ -4,6 +4,7 @@ import Script from "next/script";
 import { ChatBubble } from "@/components/chat/ChatBubble";
 import { Footer } from "@/components/layout/Footer";
 import { Header } from "@/components/layout/Header";
+import { ChatUiProvider } from "@/hooks/useChatUiState";
 import { siteConfig } from "@/lib/constants/site";
 
 import "./globals.css";
@@ -38,10 +39,12 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         </Script>
       </head>
       <body className="flex min-h-full flex-col bg-background text-foreground">
-        <Header />
-        <div className="flex-1">{children}</div>
-        <Footer />
-        <ChatBubble />
+        <ChatUiProvider>
+          <Header />
+          <div className="flex-1">{children}</div>
+          <Footer />
+          <ChatBubble />
+        </ChatUiProvider>
       </body>
     </html>
   );

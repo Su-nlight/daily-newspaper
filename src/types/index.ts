@@ -1,7 +1,14 @@
 export interface Article {
   id: string;
   title: string;
+  dek?: string;
   summary: string;
+  context?: string;
+  whatHappened?: string;
+  whyItMatters?: string;
+  keyFacts?: string[];
+  entities?: string[];
+  sources?: StorySourceItem[];
   category: string;
   source: string;
   sourceUrl: string;
@@ -24,6 +31,13 @@ export interface Category {
   slug: string;
   name: string;
   description: string;
+}
+
+export interface StorySourceItem {
+  id: string;
+  publisher: string;
+  publishedAt: string;
+  link: string;
 }
 
 export interface Source {
@@ -77,6 +91,14 @@ export interface HomepageFeed {
   brief: BriefItem[];
 }
 
+export interface CategoryEditionFeed {
+  category: Category;
+  featuredStory: Article;
+  secondaryStories: Article[];
+  latestStories: Article[];
+  trendingTopics: string[];
+}
+
 export type ChatRole = "user" | "assistant" | "system";
 
 export interface ChatMessage {
@@ -91,4 +113,10 @@ export interface ChatConversation {
   title: string;
   messages: ChatMessage[];
   updatedAt: string;
+}
+
+export interface StoryChatContext {
+  storyId: string;
+  storyTitle: string;
+  storyContext: string;
 }

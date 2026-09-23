@@ -32,9 +32,34 @@ export const mockSources: Source[] = [
 
 export const mockCategories: Category[] = [
   {
+    slug: "world",
+    name: "World",
+    description: "Global developments impacting business and technology.",
+  },
+  {
+    slug: "india",
+    name: "India",
+    description: "Policy, enterprise, and startup developments across India.",
+  },
+  {
+    slug: "technology",
+    name: "Technology",
+    description: "Architecture, tooling, and engineering culture updates.",
+  },
+  {
     slug: "ai",
-    name: "Artificial Intelligence",
+    name: "AI",
     description: "Coverage of AI models, products, and policy shifts.",
+  },
+  {
+    slug: "business",
+    name: "Business",
+    description: "Markets, enterprise strategy, and leadership developments.",
+  },
+  {
+    slug: "science",
+    name: "Science",
+    description: "Scientific findings shaping technology and society.",
   },
   {
     slug: "research",
@@ -47,14 +72,9 @@ export const mockCategories: Category[] = [
     description: "Threat intelligence, breaches, and defensive practices.",
   },
   {
-    slug: "software-engineering",
-    name: "Software Engineering",
-    description: "Architecture, tooling, and engineering culture updates.",
-  },
-  {
-    slug: "world",
-    name: "World News",
-    description: "Global developments impacting business and technology.",
+    slug: "career",
+    name: "Career",
+    description: "Career signals for engineers, researchers, and operators.",
   },
 ];
 
@@ -117,7 +137,7 @@ export const mockArticles: Article[] = [
     title: "Open-source observability team cuts backend costs with Rust rewrite",
     summary:
       "A high-traffic observability platform shared benchmarks showing lower compute spend after migrating ingestion services from Go to Rust.",
-    category: "software-engineering",
+    category: "technology",
     source: "Global Wire",
     sourceUrl: "https://globalwire.example.com/rust-backend-scale",
     publishedAt: "2026-09-21T19:45:00Z",
@@ -205,7 +225,7 @@ export const mockArticles: Article[] = [
     title: "WebAssembly runtimes gain ground in edge compute deployments",
     summary:
       "Engineering teams report faster cold-start times and smaller deployment footprints after moving latency-sensitive services from containers to WASM.",
-    category: "software-engineering",
+    category: "technology",
     source: "Global Wire",
     sourceUrl: "https://globalwire.example.com/webassembly-edge",
     publishedAt: "2026-09-21T16:10:00Z",
@@ -217,7 +237,7 @@ export const mockArticles: Article[] = [
     title: "Survey: teams shipping typed APIs report 30% fewer integration bugs",
     summary:
       "Engineering leaders point to end-to-end type safety across client and server boundaries as the single highest-leverage reliability investment this year.",
-    category: "software-engineering",
+    category: "technology",
     source: "Tech Ledger",
     sourceUrl: "https://techledger.example.com/typed-apis-survey",
     publishedAt: "2026-09-20T09:00:00Z",
@@ -274,7 +294,7 @@ export const mockSavedStories: SavedStory[] = [
 ];
 
 export const mockUserPreferences: UserPreferences = {
-  preferredCategories: ["ai", "cybersecurity", "software-engineering"],
+  preferredCategories: ["ai", "cybersecurity", "technology"],
   preferredTopics: ["AI Agents", "Cloud Security", "India Tech"],
   mutedSources: [],
   locale: "en-IN",
