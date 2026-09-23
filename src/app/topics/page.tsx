@@ -1,17 +1,21 @@
+import { PageContainer } from "@/components/layout/PageContainer";
+import { SectionHeading } from "@/components/layout/SectionHeading";
 import { getTopics } from "@/lib/api/client";
 
 export default async function TopicsPage() {
   const topics = await getTopics();
 
   return (
-    <main className="mx-auto flex w-full max-w-4xl flex-col gap-4 px-4 py-8 sm:px-6 lg:px-8">
-      <h1 className="text-3xl font-bold tracking-tight">Topics</h1>
-      <p className="text-zinc-700 dark:text-zinc-300">Placeholder topic discovery route.</p>
-      <ul className="list-disc space-y-1 pl-6 text-sm text-zinc-600 dark:text-zinc-400">
+    <PageContainer>
+      <SectionHeading eyebrow="Discover" title="Topics" description="Placeholder topic discovery route." />
+      <ul className="grid gap-3 sm:grid-cols-2">
         {topics.map((topic) => (
-          <li key={topic.id}>{topic.name}</li>
+          <li key={topic.id} className="border-t border-border pt-3">
+            <p className="text-subheadline">{topic.name}</p>
+            <p className="text-caption">{topic.description}</p>
+          </li>
         ))}
       </ul>
-    </main>
+    </PageContainer>
   );
 }

@@ -1,24 +1,148 @@
 @import "tailwindcss";
 
+/*
+ * Daily Signal — Design System
+ * Editorial / premium-newspaper visual language.
+ * All future modules should build on these tokens rather than
+ * introducing independent colors, type, spacing, or component styles.
+ */
+
+/* Enable a class-based dark variant so the theme toggle can override
+   the system preference (in addition to the prefers-color-scheme default below). */
+@custom-variant dark (&:where(.dark, .dark *));
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* ---- Color tokens (light) ---- */
+  --background: #faf7f1;
+  --background-elevated: #ffffff;
+  --foreground: #1c1815;
+  --muted: #6f655a;
+  --border: #e6ddcd;
+  --border-strong: #d3c7b1;
+  --accent: #9c3d26;
+  --accent-foreground: #fbf3ea;
+
+  /* ---- Type tokens ----
+   * Web-safe system stacks: zero network dependency, so builds never break
+   * offline or behind a proxy. Swap in next/font (Google or local) later by
+   * setting these two custom properties from a font's `variable` output —
+   * every component already reads type through var(--font-display) /
+   * var(--font-sans), never a hardcoded family name. */
+  --font-display: Georgia, "Iowan Old Style", "Palatino Linotype", "Book Antiqua", ui-serif,
+    "Times New Roman", serif;
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, ui-sans-serif,
+    Helvetica, Arial, sans-serif;
+
+  /* ---- Layout tokens ---- */
+  --content-width: 1360px;
+}
+
+.dark {
+  /* ---- Color tokens (dark) ---- */
+  --background: #17140f;
+  --background-elevated: #201c17;
+  --foreground: #f1e9db;
+  --muted: #a29689;
+  --border: #332d24;
+  --border-strong: #453d31;
+  --accent: #d97e5f;
+  --accent-foreground: #1c1815;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --background: #17140f;
+    --background-elevated: #201c17;
+    --foreground: #f1e9db;
+    --muted: #a29689;
+    --border: #332d24;
+    --border-strong: #453d31;
+    --accent: #d97e5f;
+    --accent-foreground: #1c1815;
+  }
 }
 
 @theme inline {
   --color-background: var(--background);
+  --color-background-elevated: var(--background-elevated);
   --color-foreground: var(--foreground);
-}
+  --color-muted: var(--muted);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --font-display: var(--font-display);
+  --font-sans: var(--font-sans);
+
+  --container-content: var(--content-width);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Inter, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  background: var(--color-background);
+  color: var(--color-foreground);
+  font-family: var(--font-sans);
+}
+
+/* ---- Typography scale ----
+ * Reusable semantic classes. Use these instead of ad-hoc font-size /
+ * font-family utility combinations so every module stays consistent. */
+@layer components {
+  .text-display {
+    font-family: var(--font-display);
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    line-height: 1.02;
+    font-size: clamp(2.75rem, 2.1rem + 3vw, 4.75rem);
+  }
+
+  .text-headline {
+    font-family: var(--font-display);
+    font-weight: 600;
+    letter-spacing: -0.015em;
+    line-height: 1.08;
+    font-size: clamp(1.75rem, 1.5rem + 1.1vw, 2.75rem);
+  }
+
+  .text-subheadline {
+    font-family: var(--font-display);
+    font-weight: 500;
+    letter-spacing: -0.01em;
+    line-height: 1.25;
+    font-size: clamp(1.25rem, 1.15rem + 0.4vw, 1.625rem);
+  }
+
+  .text-section-title {
+    font-family: var(--font-sans);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.09em;
+    line-height: 1.2;
+    font-size: 0.8125rem;
+  }
+
+  .text-body {
+    font-family: var(--font-sans);
+    font-weight: 400;
+    line-height: 1.7;
+    font-size: 1rem;
+  }
+
+  .text-caption {
+    font-family: var(--font-sans);
+    font-weight: 400;
+    line-height: 1.5;
+    font-size: 0.875rem;
+    color: var(--color-muted);
+  }
+
+  .text-metadata {
+    font-family: var(--font-sans);
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    line-height: 1.4;
+    font-size: 0.75rem;
+    color: var(--color-muted);
+  }
 }
