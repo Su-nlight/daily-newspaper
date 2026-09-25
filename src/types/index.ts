@@ -46,11 +46,56 @@ export interface SavedStory {
   notes?: string;
 }
 
+export interface TopicPreference {
+  id: string;
+  /** 0–1. Set by the user via a slider; never treated as a hidden backend score. */
+  weight: number;
+}
+
+export interface Region {
+  id: string;
+  name: string;
+}
+
+export interface ContentType {
+  id: string;
+  name: string;
+  description: string;
+}
+
 export interface UserPreferences {
-  preferredCategories: string[];
-  preferredTopics: string[];
-  mutedSources: string[];
-  locale: string;
+  topics: TopicPreference[];
+  regions: string[];
+  sources: string[];
+  contentTypes: string[];
+  /** Preferred daily reading time budget, in minutes. */
+  readingTime: number;
+}
+
+export type BehavioralSignalType =
+  | "article_opened"
+  | "article_saved"
+  | "article_shared"
+  | "article_completed"
+  | "topic_followed"
+  | "topic_ignored";
+
+/**
+ * Frontend-only event shape for Module 05's behavioral-signal
+ * infrastructure. No ML/recommendation logic consumes these yet — see
+ * lib/analytics/signals.ts and docs/PROJECT_STATE.md.
+ */
+export interface BehavioralSignal {
+  type: BehavioralSignalType;
+  payload: Record<string, unknown>;
+  occurredAt: string;
+}
+
+/** An Article paired with the (non-numeric) reasons it was personalized
+ *  for this user, rendered by components/personalization/WhyRelevant.tsx. */
+export interface PersonalizedStory {
+  article: Article;
+  reasons: string[];
 }
 
 export interface HomepageSection {
@@ -73,7 +118,7 @@ export interface HomepageFeed {
   heroStory: Article | null;
   secondaryStories: Article[];
   sections: HomepageSection[];
-  personalized: Article[];
+  personalized: PersonalizedStory[];
   brief: BriefItem[];
 }
 

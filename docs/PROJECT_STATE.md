@@ -6,82 +6,78 @@
 - Module 02 Design System
 - Module 03 Daily Newspaper Homepage
 - Module 04 Story and Category Pages
+- Module 05 Personalization and Topics
 
 ## Current
 
-Module 04 is complete and merged. Awaiting Module 05.
+Module 05 is complete and merged. Awaiting Module 06.
 
 ## Routes
 
 | Route                | Status                                                                    |
 | --------------------- | -------------------------------------------------------------------------- |
-| `/`                   | Built (Module 03) — full front page: masthead, edition meta, hero, secondary stories, World/Technology/AI & Research/Cybersecurity sections, Relevant to You, 60-Second Brief. `loading.tsx` + empty-edition state with retry. |
-| `/story/[id]`         | **Built (Module 04)** — full premium-journalism layout: back-to-edition, category, headline, dek, date/time, source, hero, summary, What Happened, Why It Matters, Key Facts, Sources, Related Stories, Ask AI About This Story. Has `loading.tsx`, `not-found.tsx`, and `error.tsx`. |
-| `/category/[slug]`    | **Built (Module 04)** — featured story, two-column secondary area, vertical latest feed, trending topics. Has `loading.tsx`, `not-found.tsx`, and `error.tsx`. |
+| `/`                   | Built (Module 03). "Relevant to You" **changed in Module 05** — now driven by `getPersonalizedStories()` against the mock user's actual preferences instead of static per-article `relevanceScore`/`whyRelevant` fields. |
+| `/story/[id]`         | Built (Module 04). **Extended in Module 05** with `ArticleViewTracker` (fires `article_opened` on mount), `SaveStoryButton` / `ShareStoryButton` (fire `article_saved` / `article_shared`), and `ArticleCompletionTracker` (fires `article_completed` via `IntersectionObserver` near the bottom of the article). |
+| `/category/[slug]`    | Built (Module 04). Unchanged in Module 05.                               |
 | `/search`             | Placeholder, restyled. No real search UI yet.                            |
-| `/saved`              | Placeholder, restyled. No save/unsave interaction yet.                   |
-| `/topics`             | Placeholder, restyled. Lists mock topics.                                |
+| `/saved`              | Placeholder, restyled. No save/unsave interaction yet — note `SaveStoryButton` on the story page is a local UI toggle only (see Known issues); it does not write into `getSavedStories()`. |
+| `/topics`             | **Rebuilt in Module 05** as the personalization preferences center: topic-importance sliders ("Your Interests"), region toggles, source toggles, content-type toggles, and a reading-time slider, via `PreferencesEditor`. Previously a static list of topic names. |
 | `/archive`            | Placeholder, restyled. No historical edition browsing yet.               |
 | `/research`           | Placeholder, restyled. No research monitoring feed yet.                  |
 | `/career`             | Placeholder, restyled. No career intelligence content yet.               |
-| `/chat`               | Placeholder, restyled. Persistent `ChatBubble` (bottom-left, every page) is UI-shell only — no backend wired. Now shares state with `AskAboutStory` via `ChatProvider` (see Decisions below). |
+| `/chat`               | Placeholder, restyled. Persistent `ChatBubble` shares state with `AskAboutStory` via `ChatProvider` (Module 04).                                                              |
 | `/about`              | Placeholder, restyled.                                                   |
-
-Also added in Module 04: a global `src/app/not-found.tsx` (unmatched routes) and a global `src/app/error.tsx` (root-segment error boundary), both using the design system, so every page — not just story/category — has a styled fallback instead of Next's default.
 
 ## API contracts
 
-All in `src/lib/api/client.ts`, returning mock data from `src/data/mock-newspaper.ts`. No network calls yet — every function is `async` so a real backend can replace the body without changing call sites.
+All in `src/lib/api/client.ts`, returning mock data from `src/data/mock-newspaper.ts`. No network calls, no persistence — every function is `async` so a real backend can replace the body without changing call sites.
 
-- `getTodayEdition(): Promise<Edition>`
-- `getHomepageFeed(): Promise<HomepageFeed>` — composes the full "/" data contract (Module 03).
-- `getStory(id): Promise<StoryDetail | null>` — **changed in Module 04.** Previously returned `Article | null`; now returns the richer `StoryDetail` (adds `dek`, `whatHappened`, `whyItMatters`, `keyFacts`, `citations`). Looks up hand-authored content in `mockStoryDetails` first, falling back to `deriveStoryDetail()` (templated from the base `Article`, not lorem ipsum) so **any** valid article id renders a complete story page, not just the 6 curated ones.
-- `getRelatedStories(story, limit = 3): Promise<Article[]>` — **added in Module 04.** Ranks other articles by shared topics (weighted 2×) plus same-category (weighted 1×); entity-level matching isn't modeled yet (see Known issues).
-- `getCategory(slug): Promise<{ category: Category | null; stories: Article[] }>` — unchanged, now used internally by `getCategoryFeed`.
-- `getCategoryFeed(slug): Promise<CategoryFeed>` — **added in Module 04.** Composes the full "/category/[slug]" data contract: `featuredStory` (most recent), `secondaryStories` (next 2), `latestStories` (the rest), and `trendingTopics` (topic frequency within the category, top 6). Returns `category: null` for an unknown slug — the page turns that into `notFound()`, not an empty shell.
-- `searchStories(query): Promise<Article[]>`
-- `getSavedStories(): Promise<SavedStory[]>`
-- `getTopics(): Promise<Topic[]>`
-- `sendChatMessage(message): Promise<ChatConversation>`
+**Added in Module 05:**
 
-**Breaking change to note:** `getStory`'s return type changed from `Article | null` to `StoryDetail | null`. `StoryDetail extends Article`, so any code treating the result as a plain `Article` still compiles, but anything relying on the *absence* of `dek`/`whatHappened`/etc. should be checked if added later.
+- `getRegions(): Promise<Region[]>` — the 6 regions from the spec (India, Europe, Japan, South Korea, Singapore, Global).
+- `getSources(): Promise<Source[]>` — previously unused `mockSources`, now surfaced for the Sources preference toggles.
+- `getContentTypes(): Promise<ContentType[]>` — 4 content types tied to the product areas from Module 01 (Daily Edition, Research Monitoring, Career Intelligence, 60-Second Brief).
+- `getUserPreferences(): Promise<UserPreferences>` — returns `mockUserPreferences`, standing in for "the current signed-in user." **There is still no auth/session** — this is a single hardcoded preferences object, not per-user data.
+- `getPersonalizedStories(preferences = mockUserPreferences, limit = 4): Promise<PersonalizedStory[]>` — **the personalization engine.** Deterministic, explainable, rule-based scoring (not ML): sums the user's own topic weights for matching topics, +0.3 for a followed region (derived from the article's source's country — see Known issues), +0.2 for a followed source, +0.1 if published today. Returns each article paired with plain-language `reasons: string[]`; **the numeric score itself is never returned**, matching the spec's "do not expose internal scoring numbers" requirement.
+
+**Changed in Module 05:**
+
+- `getHomepageFeed()`'s `personalized` field is now computed by calling `getPersonalizedStories()` instead of filtering `mockArticles` by a static `relevanceScore` field. Its type changed from `Article[]` to `PersonalizedStory[]` (breaking change to `HomepageFeed`, see Decisions below).
+- `UserPreferences` **type shape changed completely** — see Decisions below.
+
+**Unchanged:** `getTodayEdition`, `getStory`, `getRelatedStories`, `getCategory`, `getCategoryFeed`, `searchStories`, `getSavedStories`, `getTopics` (now returns 10 topics instead of 4 — see Decisions), `sendChatMessage`.
 
 ## Components
 
 `src/components/`, grouped by folder as established in Module 01:
 
-**layout/** — `Header`, `Footer`, `PageContainer`, `SectionHeading` (Module 02)
+**layout/**, **navigation/** — unchanged (Module 02)
 
-**navigation/** — `ThemeToggle`, `MobileNavigation` (Module 02)
+**newspaper/** — unchanged (Modules 02–04)
 
-**newspaper/** — `Masthead` (Module 02); `HeroStory`, `EditionMeta`, `SecondaryStories`, `NewspaperSection` (Module 03, **extended in Module 04** with a `columns?: 2 | 3` prop for the category page's two-up secondary area), `SixtySecondBrief`, `EmptyEditionState`, `RetryButton` (Module 03); `TrendingTopics` — **added in Module 04**
+**story/** — unchanged from Module 04 plus, **added in Module 05:** `ArticleViewTracker`, `ArticleCompletionTracker`, `SaveStoryButton`, `ShareStoryButton` (all client, all call `lib/analytics/signals.ts`)
 
-**story/** — `StandardStory`, `CompactStory`, `HorizontalStory`, `StoryImagePlaceholder` (Module 03); `StoryHeader`, `StoryHero`, `StorySummary`, `StorySection` (reusable title+body wrapper, used for What Happened / Why It Matters), `KeyFacts`, `SourceList`, `RelatedStories`, `AskAboutStory` (client) — **all added in Module 04**
+**personalization/** — `RelevantToYou` (Module 03, **rewritten in Module 05** to consume `PersonalizedStory[]` and render `WhyRelevant` instead of inlining a single `whyRelevant` string); **added in Module 05:** `WhyRelevant` (reusable, spec-required), `PreferencesEditor` (client, owns all preference state for the session), `TopicPreferenceSlider`, `ToggleChip` (shared by regions/sources/content-types), `ReadingTimeSlider`
 
-**personalization/** — `RelevantToYou` (Module 03)
-
-**chat/** — `ChatBubble`, `ChatPanelShell` (Module 02); `ChatProvider` — **added in Module 04.** React context (`useChat()`) shared between `ChatBubble` and `AskAboutStory` so a story page can open the global chat panel pre-loaded with `{ storyId, title, context }`, shown as a "Discussing: …" banner in the panel with a Clear action. `ChatBubble` no longer owns its own open/closed state — it reads it from context. Wrapping `<ChatProvider>` was added around `{children}` + `Header` + `Footer` + `ChatBubble` in `app/layout.tsx`.
+**chat/** — unchanged (Module 04)
 
 **search/** — empty, not yet built
 
 ## Known issues
 
-- **Not-found pages return HTTP 200, not 404.** Confirmed this is current, documented Next.js App Router behavior (see https://nextjs.org/docs/app/api-reference/functions/not-found — "Because the check runs inside the `<Suspense>` boundary, the response has already begun streaming as a 200, and the status can't change once streaming has started"), not a bug in this codebase — reproduced identically with `loading.tsx` removed. Next automatically injects `<meta name="robots" content="noindex">` on these responses to protect SEO. If a real 404 status is ever a hard requirement (e.g. for uptime monitoring or crawler contracts), the article-existence check needs to happen before any streaming starts (e.g. in middleware), which is a bigger structural change than this module's scope.
-- **No real images**, unchanged from Module 03 — `StoryImagePlaceholder` is still the only story visual.
-- **Fonts are system stacks**, unchanged from Module 03 — see that entry below for the swap-back path.
-- **`category` field is a loose string, not a foreign key** — unchanged from Module 03. Now also affects `getCategoryFeed`: a category with 0 matching articles renders `category` details with an empty featured/secondary/latest state (handled gracefully — "No stories in this category yet." — but worth knowing).
-- **Only 5 of the 9 categories named in the Module 04 spec (World, India, Technology, AI, Cybersecurity, Business, Science, Research, Career) exist in `mockCategories`** (`ai`, `research`, `cybersecurity`, `software-engineering`, `world`). Visiting `/category/india`, `/category/business`, `/category/science`, or `/category/career` correctly renders the "Category not found" state rather than crashing — this is the intended behavior for an unimplemented category, not a bug, but a future module should either add these categories with real mock content or map them onto existing ones.
-- **`getRelatedStories` doesn't model entities**, only topics + category. The spec mentions "entities" (e.g. companies, people) as a related-stories signal; `Article` has no entity field yet.
-- **`EmptyEditionState` is still unreachable with current mock data** — unchanged from Module 03.
-- **`/chat` page and the persistent `ChatBubble` are still separate UIs** — unchanged from Module 03. Note `AskAboutStory` opens the *bubble*, not the `/chat` page — that's intentional per the Module 04 spec ("Clicking this should open the global chat UI").
+- **No persistence for preferences.** `PreferencesEditor` holds state in a plain `useState`, seeded from `mockUserPreferences` on the server. Reloading the page resets every slider/toggle to the mock defaults. This was a deliberate simplification to avoid a `useEffect` + `localStorage`-on-mount pattern, which would trip the same `react-hooks/set-state-in-effect` lint issue already worked around in `ThemeToggle` (Module 02) and would need a `useSyncExternalStore` rewrite to do properly — left as a clearly-scoped follow-up rather than adding that complexity now. The homepage's `getPersonalizedStories()` always reads from `mockUserPreferences` server-side, **not** from whatever a visitor has changed on `/topics` in their own browser — the two are not wired together yet.
+- **Behavioral signals are logged, not sent anywhere.** `lib/analytics/signals.ts` console-logs (dev only) and appends to a capped `localStorage` array (`daily-signal:behavioral-signals`). No backend endpoint exists yet — this is exactly the "prepare frontend infrastructure" scope the module asked for, not a working analytics pipeline.
+- **`SaveStoryButton` is a local visual toggle only.** Clicking it fires an `article_saved` signal and flips the button's own state, but does **not** add the story to `getSavedStories()` / the `/saved` page. Wiring real save persistence is `/saved`'s job in a future module.
+- **Region matching is approximate.** `Article` has no `region` field, so `getPersonalizedStories()` infers it from the article's source's `country` (`Source.country`) via a small `COUNTRY_TO_REGION` map. India → india, United Kingdom → europe, United States → global (the spec's region list has no North America option, so US-sourced coverage is treated as "Global" — a pragmatic choice, not a precise mapping). Japan, South Korea, and Singapore currently match no mock sources at all, so selecting those regions has no visible effect on `/` yet.
+- **`Article.relevanceScore` and `Article.whyRelevant` are now legacy/unused fields.** They're still on the `Article` type and still set on 6 mock articles (from Module 03), but `getPersonalizedStories()` no longer reads them — personalization is now fully preference-driven. Left in place rather than touched in this module to avoid unnecessary diff noise; a future module should remove them from the type and mock data once nothing references them.
+- **Only 5 of the 10 topics have any matching mock articles** (AI Agents, Cloud Security, Research Monitoring, India Tech, Cybersecurity — and Cybersecurity only via `Article.category`, no article currently tags the `"Cybersecurity"` topic string directly, only `"Cloud Security"`). RAG, Software Engineering, Cloud, SAP, and Blockchain exist as followable topics with zero current matches — intentional (real products let you follow an interest before matching content exists), but worth knowing when testing `/topics`.
+- **`weightLabel()` (Low/Medium/High/Essential) is a presentation-only bucketing of the 0–1 weight**, chosen to keep the preferences page from reading like a numeric dashboard slider per Module 02's design direction. The underlying `TopicPreference.weight` stored in state is still the precise slider value (steps of 0.05).
 
 ## Decisions that must not be changed
 
-- **Design tokens live only in `globals.css`.** Colors and the type scale (`.text-display` … `.text-metadata`) are the only source of color and typography. No component should hardcode a hex value, a raw Tailwind color utility, or a one-off `font-size`.
-- **Dark mode is class-based (`.dark` on `<html>`)**, driven by `components/navigation/ThemeToggle.tsx` + the `beforeInteractive` script in `app/layout.tsx`. Don't add a second dark-mode mechanism.
-- **`PageContainer` is the only page-level width/padding wrapper**, with exactly two widths (`narrow` / default).
-- **The homepage only calls `getHomepageFeed()`; the category page only calls `getCategoryFeed()`.** Section/feed composition logic belongs in `lib/api/client.ts`, never in `page.tsx` or components. This is what lets a real backend replace mock data without touching the UI layer.
-- **`StoryImagePlaceholder` replaces `<img src={article.imageUrl}>` everywhere** until real images exist. Update the placeholder component once, in one place, rather than wiring raw `<img>`/`next/image` tags piecemeal.
-- **Global chat state lives in `ChatProvider` (`components/chat/ChatProvider.tsx`), not in `ChatBubble`'s own state.** Anything that needs to open the chat panel or set its story context — `AskAboutStory` today, possibly other entry points later — should call `useChat().openChat(...)`, not duplicate open/close state locally.
-- **`getStory` returns `StoryDetail`, not `Article`.** If a future module needs a lighter-weight story lookup that skips the detail composition, add a separate function rather than changing `getStory`'s return shape again — other code (the story page) depends on the full shape.
-- **Route structure and the API function list from Module 01 are unchanged**, only extended — every addition in Modules 02–04 has been additive, not a replacement of an established contract, except the one explicitly noted breaking change above (`getStory`'s return type).
+- **`UserPreferences` now matches the Module 05 spec's exact shape**: `{ topics: TopicPreference[], regions: string[], sources: string[], contentTypes: string[], readingTime: number }`. This replaced the Module 01 placeholder shape (`preferredCategories` / `preferredTopics` / `mutedSources` / `locale`), which was never used by any built feature. `contentTypes` was added beyond the spec's literal JSON example because the surrounding spec prose explicitly lists "content types" as a 4th personalization category to support — don't remove it without re-reading Module 05's "Personalization Categories" section.
+- **`getPersonalizedStories()` never returns a raw numeric score to its caller.** Only `{ article, reasons }`. If a future module needs the score for internal sorting elsewhere, compute it in `lib/api/client.ts` and still only expose reasons outward — never let a numeric relevance value reach a component that renders to the user, per the spec's explicit "do not expose internal scoring numbers."
+- **Personalization here is rule-based and must not be described as AI-powered.** Copy on `/topics` and in `RelevantToYou`'s description explicitly says preferences are "not AI-generated yet" / "not AI-generated." Don't change this copy until a real model-driven recommendation module actually exists.
+- **Design tokens, dark mode, `PageContainer`, and the homepage/category "one composing API function per page" pattern** — unchanged from Modules 02–04, still binding. `getHomepageFeed()` is still the only function `/` calls; it now happens to call `getPersonalizedStories()` internally, but `page.tsx` still doesn't know that.
+- **`lib/analytics/signals.ts`'s `recordSignal()` is the single call site for every behavioral signal.** New signal-emitting UI should call it rather than writing to `localStorage` or `console` directly, so there's exactly one place to swap in a real endpoint later.
+- **Route structure and the Module 01 API function list are unchanged**, only extended. The one breaking change in this module (`UserPreferences`'s shape, and `HomepageFeed.personalized`'s type) is called out explicitly above rather than silently introduced.

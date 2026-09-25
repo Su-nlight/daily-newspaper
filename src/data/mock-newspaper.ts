@@ -2,7 +2,9 @@ import type {
   Article,
   Category,
   ChatConversation,
+  ContentType,
   Edition,
+  Region,
   SavedStory,
   Source,
   StoryDetail,
@@ -79,6 +81,68 @@ export const mockTopics: Topic[] = [
     id: "topic-research",
     name: "Research Monitoring",
     description: "Academic and industrial research worth tracking.",
+  },
+  {
+    id: "topic-cybersecurity",
+    name: "Cybersecurity",
+    description: "Threats, breaches, and defensive practice more broadly than cloud alone.",
+  },
+  {
+    id: "topic-rag",
+    name: "RAG",
+    description: "Retrieval-augmented generation architectures and benchmarks.",
+  },
+  {
+    id: "topic-software-engineering",
+    name: "Software Engineering",
+    description: "Architecture, tooling, and engineering culture.",
+  },
+  {
+    id: "topic-cloud",
+    name: "Cloud",
+    description: "Cloud infrastructure, platforms, and cost/performance tradeoffs.",
+  },
+  {
+    id: "topic-sap",
+    name: "SAP",
+    description: "Enterprise resource planning and SAP ecosystem news.",
+  },
+  {
+    id: "topic-blockchain",
+    name: "Blockchain",
+    description: "Distributed ledger technology and its enterprise applications.",
+  },
+];
+
+export const mockRegions: Region[] = [
+  { id: "india", name: "India" },
+  { id: "europe", name: "Europe" },
+  { id: "japan", name: "Japan" },
+  { id: "south-korea", name: "South Korea" },
+  { id: "singapore", name: "Singapore" },
+  { id: "global", name: "Global" },
+];
+
+export const mockContentTypes: ContentType[] = [
+  {
+    id: "daily-edition",
+    name: "Daily Edition Stories",
+    description: "The main daily front-page story feed.",
+  },
+  {
+    id: "research-monitoring",
+    name: "Research Monitoring",
+    description: "Papers, benchmarks, and lab announcements.",
+  },
+  {
+    id: "career-intelligence",
+    name: "Career Intelligence",
+    description: "Hiring trends and skill-demand signals.",
+  },
+  {
+    id: "sixty-second-brief",
+    name: "60-Second Brief",
+    description: "The compact daily summary.",
   },
 ];
 
@@ -407,10 +471,18 @@ export const mockSavedStories: SavedStory[] = [
 ];
 
 export const mockUserPreferences: UserPreferences = {
-  preferredCategories: ["ai", "cybersecurity", "software-engineering"],
-  preferredTopics: ["AI Agents", "Cloud Security", "India Tech"],
-  mutedSources: [],
-  locale: "en-IN",
+  topics: [
+    { id: "topic-agents", weight: 0.9 },
+    { id: "topic-rag", weight: 0.85 },
+    { id: "topic-cloud-security", weight: 0.75 },
+    { id: "topic-cybersecurity", weight: 0.6 },
+    { id: "topic-india-tech", weight: 0.55 },
+    { id: "topic-research", weight: 0.5 },
+  ],
+  regions: ["india", "europe"],
+  sources: ["source-tech-ledger", "source-security-post"],
+  contentTypes: ["daily-edition", "research-monitoring"],
+  readingTime: 10,
 };
 
 export const mockConversation: ChatConversation = {

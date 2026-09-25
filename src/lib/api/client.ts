@@ -2,10 +2,14 @@ import {
   mockArticles,
   mockCategories,
   mockConversation,
+  mockContentTypes,
+  mockRegions,
   mockSavedStories,
+  mockSources,
   mockStoryDetails,
   mockTodayEdition,
   mockTopics,
+  mockUserPreferences,
 } from "@/data/mock-newspaper";
 import type {
   Article,
@@ -13,12 +17,17 @@ import type {
   Category,
   CategoryFeed,
   ChatConversation,
+  ContentType,
   Edition,
   HomepageFeed,
+  PersonalizedStory,
+  Region,
   SavedStory,
+  Source,
   StoryDetail,
   Topic,
   TrendingTopic,
+  UserPreferences,
 } from "@/types";
 import { formatCategoryLabel } from "@/lib/utils/category";
 import { formatDisplayDate } from "@/lib/utils/date";
@@ -156,6 +165,106 @@ export async function getTopics(): Promise<Topic[]> {
   return mockTopics;
 }
 
+export async function getRegions(): Promise<Region[]> {
+  return mockRegions;
+}
+
+export async function getSources(): Promise<Source[]> {
+  return mockSources;
+}
+
+export async function getContentTypes(): Promise<ContentType[]> {
+  return mockContentTypes;
+}
+
+export async function getUserPreferences(): Promise<UserPreferences> {
+  return mockUserPreferences;
+}
+
+const COUNTRY_TO_REGION: Record<string, string> = {
+  India: "india",
+  "United Kingdom": "europe",
+  "United States": "global",
+};
+
+function regionForArticle(article: Article): string | null {
+  const source = mockSources.find((candidate) => candidate.name === article.source);
+  if (!source) return null;
+  return COUNTRY_TO_REGION[source.country] ?? null;
+}
+
+function sourceIdForArticle(article: Article): string | null {
+  return mockSources.find((candidate) => candidate.name === article.source)?.id ?? null;
+}
+
+function isPublishedToday(publishedAt: string): boolean {
+  return publishedAt.slice(0, 10) === mockTodayEdition.date;
+}
+
+/**
+ * Deterministic, explainable scoring — not ML. Weighs topic-preference
+ * matches (using the user's own slider weights), a followed region, a
+ * followed source, and same-day recency. Every contributing factor is
+ * surfaced as a plain-language reason in `reasons`, and the underlying
+ * numeric score is never returned to the caller — see WhyRelevant, which
+ * intentionally has no numeric prop to render.
+ */
+function scoreArticle(
+  article: Article,
+  preferences: UserPreferences,
+): { score: number; reasons: string[] } {
+  let score = 0;
+  const reasons: string[] = [];
+
+  for (const topicPreference of preferences.topics) {
+    if (topicPreference.weight <= 0) continue;
+    const topic = mockTopics.find((candidate) => candidate.id === topicPreference.id);
+    if (topic && article.topics.includes(topic.name)) {
+      score += topicPreference.weight;
+      reasons.push(`Matches your interest in ${topic.name}`);
+    }
+  }
+
+  const articleRegion = regionForArticle(article);
+  if (articleRegion && preferences.regions.includes(articleRegion)) {
+    score += 0.3;
+    const regionName = mockRegions.find((region) => region.id === articleRegion)?.name;
+    reasons.push(`Relevant to ${regionName ?? articleRegion}`);
+  }
+
+  const sourceId = sourceIdForArticle(article);
+  if (sourceId && preferences.sources.includes(sourceId)) {
+    score += 0.2;
+    reasons.push(`From ${article.source}, a source you follow`);
+  }
+
+  if (isPublishedToday(article.publishedAt)) {
+    score += 0.1;
+    reasons.push("Published today");
+  }
+
+  return { score, reasons };
+}
+
+/**
+ * Ranks mock articles against a user's stated preferences and returns each
+ * with a short list of plain-language reasons (never a raw score) — the
+ * data source for RelevantToYou / WhyRelevant. Deterministic rule-based
+ * scoring only; no ML/recommendation model is involved yet, and the
+ * homepage should never describe this section as "AI-powered."
+ */
+export async function getPersonalizedStories(
+  preferences: UserPreferences = mockUserPreferences,
+  limit = 4,
+): Promise<PersonalizedStory[]> {
+  return mockArticles
+    .map((article) => ({ article, ...scoreArticle(article, preferences) }))
+    .filter(({ score }) => score > 0)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, limit)
+    .map(({ article, reasons }) => ({ article, reasons }));
+}
+
 export async function sendChatMessage(message: string): Promise<ChatConversation> {
   const trimmedMessage = message.trim();
   const now = new Date().toISOString();
@@ -241,10 +350,7 @@ export async function getHomepageFeed(): Promise<HomepageFeed> {
     },
   ].filter((section) => section.stories.length > 0);
 
-  const personalized = [...mockArticles]
-    .filter((article) => typeof article.relevanceScore === "number")
-    .sort((a, b) => (b.relevanceScore ?? 0) - (a.relevanceScore ?? 0))
-    .slice(0, 4);
+  const personalized = await getPersonalizedStories(mockUserPreferences, 4);
 
   const brief: BriefItem[] = [...mockArticles]
     .sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime())
