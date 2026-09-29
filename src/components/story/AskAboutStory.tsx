@@ -1,26 +1,44 @@
 "use client";
 
 import { useChat } from "@/components/chat/ChatProvider";
-import type { StoryDetail } from "@/types";
 
 interface AskAboutStoryProps {
-  story: StoryDetail;
+  story: {
+    id: string;
+    title: string;
+    /** Short blurb passed into the chat as context — a story's dek or summary. */
+    context: string;
+  };
+  /** Smaller inline rendering for list contexts (e.g. the /saved list), vs.
+   *  the full-width prominent CTA used at the end of a story page. */
+  compact?: boolean;
 }
 
-export function AskAboutStory({ story }: AskAboutStoryProps) {
+export function AskAboutStory({ story, compact = false }: AskAboutStoryProps) {
   const { openChat } = useChat();
+
+  function handleClick() {
+    openChat({ storyId: story.id, title: story.title, context: story.context });
+  }
+
+  if (compact) {
+    return (
+      <button
+        type="button"
+        onClick={handleClick}
+        className="text-metadata flex items-center gap-1.5 border border-border-strong px-3 py-1.5 text-accent transition-colors hover:bg-background-elevated"
+      >
+        <span aria-hidden="true">💬</span>
+        Ask AI
+      </button>
+    );
+  }
 
   return (
     <section className="border-t border-border pt-6">
       <button
         type="button"
-        onClick={() =>
-          openChat({
-            storyId: story.id,
-            title: story.title,
-            context: story.dek,
-          })
-        }
+        onClick={handleClick}
         className="text-metadata flex w-full items-center justify-center gap-2 border border-border-strong bg-background-elevated px-5 py-3.5 text-accent transition-colors hover:bg-background sm:w-auto"
       >
         <svg

@@ -13,7 +13,7 @@ import { StoryHeader } from "@/components/story/StoryHeader";
 import { StoryHero } from "@/components/story/StoryHero";
 import { StorySection } from "@/components/story/StorySection";
 import { StorySummary } from "@/components/story/StorySummary";
-import { getRelatedStories, getStory } from "@/lib/api/client";
+import { getRelatedStories, getStory, isStorySaved } from "@/lib/api/client";
 
 export default async function StoryPage({ params }: PageProps<"/story/[id]">) {
   const { id } = await params;
@@ -23,7 +23,10 @@ export default async function StoryPage({ params }: PageProps<"/story/[id]">) {
     notFound();
   }
 
-  const relatedStories = await getRelatedStories(story, 3);
+  const [relatedStories, saved] = await Promise.all([
+    getRelatedStories(story, 3),
+    isStorySaved(story.id),
+  ]);
 
   return (
     <PageContainer narrow>
@@ -32,7 +35,7 @@ export default async function StoryPage({ params }: PageProps<"/story/[id]">) {
       <StoryHeader story={story} />
 
       <div className="flex gap-3">
-        <SaveStoryButton storyId={story.id} title={story.title} />
+        <SaveStoryButton storyId={story.id} title={story.title} initialSaved={saved} />
         <ShareStoryButton storyId={story.id} title={story.title} />
       </div>
 
@@ -50,7 +53,7 @@ export default async function StoryPage({ params }: PageProps<"/story/[id]">) {
       <ArticleCompletionTracker storyId={story.id} title={story.title} />
 
       <RelatedStories stories={relatedStories} />
-      <AskAboutStory story={story} />
+      <AskAboutStory story={{ id: story.id, title: story.title, context: story.dek }} />
     </PageContainer>
   );
 }

@@ -31,3 +31,25 @@ export function formatRelativeTime(isoDate: string, now: Date = new Date()): str
 
   return formatDisplayDate(isoDate);
 }
+
+/** "22 — Today" for the current edition date, otherwise "21 — Monday". Date
+ *  strings are bare YYYY-MM-DD, so formatting is pinned to UTC to avoid an
+ *  off-by-one day shift in timezones behind UTC. */
+export function archiveDayLabel(isoDate: string, todayIsoDate: string): string {
+  const day = new Date(`${isoDate}T00:00:00Z`).getUTCDate();
+  if (isoDate === todayIsoDate) return `${day} — Today`;
+
+  const weekday = new Intl.DateTimeFormat("en-IN", { weekday: "long", timeZone: "UTC" }).format(
+    new Date(`${isoDate}T00:00:00Z`),
+  );
+  return `${day} — ${weekday}`;
+}
+
+/** "September 2026" for a bare YYYY-MM-DD date, pinned to UTC. */
+export function monthYearLabel(isoDate: string): string {
+  return new Intl.DateTimeFormat("en-IN", {
+    month: "long",
+    year: "numeric",
+    timeZone: "UTC",
+  }).format(new Date(`${isoDate}T00:00:00Z`));
+}

@@ -7,22 +7,24 @@
 - Module 03 Daily Newspaper Homepage
 - Module 04 Story and Category Pages
 - Module 05 Personalization and Topics
+- Module 06 Search, Saved Stories and Archive
 
 ## Current
 
-Module 05 is complete and merged. Awaiting Module 06.
+Module 06 is complete and merged. Awaiting Module 07.
 
 ## Routes
 
 | Route                | Status                                                                    |
 | --------------------- | -------------------------------------------------------------------------- |
-| `/`                   | Built (Module 03). "Relevant to You" **changed in Module 05** — now driven by `getPersonalizedStories()` against the mock user's actual preferences instead of static per-article `relevanceScore`/`whyRelevant` fields. |
-| `/story/[id]`         | Built (Module 04). **Extended in Module 05** with `ArticleViewTracker` (fires `article_opened` on mount), `SaveStoryButton` / `ShareStoryButton` (fire `article_saved` / `article_shared`), and `ArticleCompletionTracker` (fires `article_completed` via `IntersectionObserver` near the bottom of the article). |
-| `/category/[slug]`    | Built (Module 04). Unchanged in Module 05.                               |
-| `/search`             | Placeholder, restyled. No real search UI yet.                            |
-| `/saved`              | Placeholder, restyled. No save/unsave interaction yet — note `SaveStoryButton` on the story page is a local UI toggle only (see Known issues); it does not write into `getSavedStories()`. |
-| `/topics`             | **Rebuilt in Module 05** as the personalization preferences center: topic-importance sliders ("Your Interests"), region toggles, source toggles, content-type toggles, and a reading-time slider, via `PreferencesEditor`. Previously a static list of topic names. |
-| `/archive`            | Placeholder, restyled. No historical edition browsing yet.               |
+| `/`                   | Built (Module 03/05). Unchanged in Module 06.                            |
+| `/story/[id]`         | Built (Module 04/05). **`SaveStoryButton` now does a real save** — see API contracts below. |
+| `/category/[slug]`    | Built (Module 04). Unchanged in Module 06.                               |
+| `/search`             | **Rebuilt in Module 06.** URL-driven (`?q=&date=&category=&source=&topic=&region=`) via `next/form` — no client React state for the core search flow. Covers all 5 spec states: initial (no params), searching (`loading.tsx`, shown during the client-side transition `next/form` provides), results, no results, error (`error.tsx`). |
+| `/saved`              | **Rebuilt in Module 06** as "Your Library." Shows real saved stories (pre-seeded with 2 from Module 01's `mockSavedStories`), each with Open / Ask AI / Remove. Empty state ("Your reading list is empty.") only shows once all seeded + saved stories are removed. |
+| `/topics`             | Built (Module 05). Unchanged in Module 06.                               |
+| `/archive`            | **Rebuilt in Module 06** as an editorial timeline (vertical, dot-marker list grouped by month) — not a calendar grid. Links to `/archive/[date]`. |
+| `/archive/[date]`     | **New route, added in Module 06.** Shows edition date, headline/summary, story count + estimated reading time, a category chip list, a featured story, and the rest of that edition's stories. Has `loading.tsx`, `not-found.tsx`, and `error.tsx`. |
 | `/research`           | Placeholder, restyled. No research monitoring feed yet.                  |
 | `/career`             | Placeholder, restyled. No career intelligence content yet.               |
 | `/chat`               | Placeholder, restyled. Persistent `ChatBubble` shares state with `AskAboutStory` via `ChatProvider` (Module 04).                                                              |
@@ -30,54 +32,51 @@ Module 05 is complete and merged. Awaiting Module 06.
 
 ## API contracts
 
-All in `src/lib/api/client.ts`, returning mock data from `src/data/mock-newspaper.ts`. No network calls, no persistence — every function is `async` so a real backend can replace the body without changing call sites.
+All in `src/lib/api/client.ts`, backed by `src/data/mock-newspaper.ts`. Functions are still `async` even where trivial, so a real backend can replace the body without changing call sites.
 
-**Added in Module 05:**
+**Added in Module 06:**
 
-- `getRegions(): Promise<Region[]>` — the 6 regions from the spec (India, Europe, Japan, South Korea, Singapore, Global).
-- `getSources(): Promise<Source[]>` — previously unused `mockSources`, now surfaced for the Sources preference toggles.
-- `getContentTypes(): Promise<ContentType[]>` — 4 content types tied to the product areas from Module 01 (Daily Edition, Research Monitoring, Career Intelligence, 60-Second Brief).
-- `getUserPreferences(): Promise<UserPreferences>` — returns `mockUserPreferences`, standing in for "the current signed-in user." **There is still no auth/session** — this is a single hardcoded preferences object, not per-user data.
-- `getPersonalizedStories(preferences = mockUserPreferences, limit = 4): Promise<PersonalizedStory[]>` — **the personalization engine.** Deterministic, explainable, rule-based scoring (not ML): sums the user's own topic weights for matching topics, +0.3 for a followed region (derived from the article's source's country — see Known issues), +0.2 for a followed source, +0.1 if published today. Returns each article paired with plain-language `reasons: string[]`; **the numeric score itself is never returned**, matching the spec's "do not expose internal scoring numbers" requirement.
+- `getCategories(): Promise<Category[]>` — full category list, for the search filter dropdown.
+- `getArchive(): Promise<ArchiveMonthGroup[]>` — groups `mockEditions` by month, most recent first, computing each entry's `dayLabel` ("22 — Today" / "21 — Monday") and `storyCount`.
+- `getEditionByDate(date): Promise<Edition | null>` — looks up `mockEditions` by exact date.
+- `saveStory(articleId): Promise<SavedStory>` / `removeSavedStory(articleId): Promise<void>` / `isStorySaved(articleId): Promise<boolean>` — **see "real mutation" note below.**
 
-**Changed in Module 05:**
+**Changed in Module 06:**
 
-- `getHomepageFeed()`'s `personalized` field is now computed by calling `getPersonalizedStories()` instead of filtering `mockArticles` by a static `relevanceScore` field. Its type changed from `Article[]` to `PersonalizedStory[]` (breaking change to `HomepageFeed`, see Decisions below).
-- `UserPreferences` **type shape changed completely** — see Decisions below.
+- `searchStories()` signature changed from `(query: string)` to `(filters: SearchFilters)` — `{ query?, date?, category?, source?, topic?, region? }`. Reuses the same `regionForArticle()` / `sourceIdForArticle()` helpers built for Module 05's personalization engine, so "region" and "source" mean the same thing in search as they do in Relevant to You.
+- `getSavedStories()` return type changed from `SavedStory[]` to `SavedStoryWithArticle[]` (`{ saved, article }`) — the join the `/saved` page actually needs, done once in the API layer rather than in the page.
 
-**Unchanged:** `getTodayEdition`, `getStory`, `getRelatedStories`, `getCategory`, `getCategoryFeed`, `searchStories`, `getSavedStories`, `getTopics` (now returns 10 topics instead of 4 — see Decisions), `sendChatMessage`.
+**Real mutation, not mock-only:** Unlike every other `get*` function, `saveStory()` / `removeSavedStory()` write to a **module-level in-memory array** (`savedStoryStore` in `client.ts`), seeded from `mockSavedStories`. They're called from **Server Actions** in `src/lib/actions/saved-stories.ts` (`saveStoryAction`, `removeSavedStoryAction`), which also call `revalidatePath("/saved")`. This is a genuine change in kind from every prior module's mock data — it's the first real (if temporary) write path in the app. See Known issues for what this does and doesn't mean.
 
 ## Components
 
 `src/components/`, grouped by folder as established in Module 01:
 
-**layout/**, **navigation/** — unchanged (Module 02)
+**layout/**, **navigation/**, **newspaper/** (existing) — unchanged except **`ArchiveTimeline`** added to `newspaper/` (Module 06).
 
-**newspaper/** — unchanged (Modules 02–04)
+**story/** — unchanged from Module 05 except:
+- **`SaveStoryButton` rewritten** — now takes an `initialSaved: boolean` prop (computed server-side via `isStorySaved()`), does optimistic UI + `useTransition`, and calls the real `saveStoryAction`/`removeSavedStoryAction` Server Actions instead of only flipping local state.
+- **`AskAboutStory` generalized** — prop changed from `story: StoryDetail` to a minimal `{ id, title, context }` shape, plus a new `compact?: boolean` variant (small inline button) for reuse in the saved-stories list. Call sites updated: the story page now passes `{ id: story.id, title: story.title, context: story.dek }` explicitly.
+- **Added:** `RemoveSavedButton` (client, calls `removeSavedStoryAction`), `SavedStoryCard` (composes Open link + compact `AskAboutStory` + `RemoveSavedButton`).
 
-**story/** — unchanged from Module 04 plus, **added in Module 05:** `ArticleViewTracker`, `ArticleCompletionTracker`, `SaveStoryButton`, `ShareStoryButton` (all client, all call `lib/analytics/signals.ts`)
+**personalization/**, **chat/** — unchanged (Module 05/04)
 
-**personalization/** — `RelevantToYou` (Module 03, **rewritten in Module 05** to consume `PersonalizedStory[]` and render `WhyRelevant` instead of inlining a single `whyRelevant` string); **added in Module 05:** `WhyRelevant` (reusable, spec-required), `PreferencesEditor` (client, owns all preference state for the session), `TopicPreferenceSlider`, `ToggleChip` (shared by regions/sources/content-types), `ReadingTimeSlider`
-
-**chat/** — unchanged (Module 04)
-
-**search/** — empty, not yet built
+**search/** — **first components in this folder.** `SearchForm` (server-rendered `next/form`, all filter state lives in the URL), `SearchResultCard` (reuses `SaveStoryButton`).
 
 ## Known issues
 
-- **No persistence for preferences.** `PreferencesEditor` holds state in a plain `useState`, seeded from `mockUserPreferences` on the server. Reloading the page resets every slider/toggle to the mock defaults. This was a deliberate simplification to avoid a `useEffect` + `localStorage`-on-mount pattern, which would trip the same `react-hooks/set-state-in-effect` lint issue already worked around in `ThemeToggle` (Module 02) and would need a `useSyncExternalStore` rewrite to do properly — left as a clearly-scoped follow-up rather than adding that complexity now. The homepage's `getPersonalizedStories()` always reads from `mockUserPreferences` server-side, **not** from whatever a visitor has changed on `/topics` in their own browser — the two are not wired together yet.
-- **Behavioral signals are logged, not sent anywhere.** `lib/analytics/signals.ts` console-logs (dev only) and appends to a capped `localStorage` array (`daily-signal:behavioral-signals`). No backend endpoint exists yet — this is exactly the "prepare frontend infrastructure" scope the module asked for, not a working analytics pipeline.
-- **`SaveStoryButton` is a local visual toggle only.** Clicking it fires an `article_saved` signal and flips the button's own state, but does **not** add the story to `getSavedStories()` / the `/saved` page. Wiring real save persistence is `/saved`'s job in a future module.
-- **Region matching is approximate.** `Article` has no `region` field, so `getPersonalizedStories()` infers it from the article's source's `country` (`Source.country`) via a small `COUNTRY_TO_REGION` map. India → india, United Kingdom → europe, United States → global (the spec's region list has no North America option, so US-sourced coverage is treated as "Global" — a pragmatic choice, not a precise mapping). Japan, South Korea, and Singapore currently match no mock sources at all, so selecting those regions has no visible effect on `/` yet.
-- **`Article.relevanceScore` and `Article.whyRelevant` are now legacy/unused fields.** They're still on the `Article` type and still set on 6 mock articles (from Module 03), but `getPersonalizedStories()` no longer reads them — personalization is now fully preference-driven. Left in place rather than touched in this module to avoid unnecessary diff noise; a future module should remove them from the type and mock data once nothing references them.
-- **Only 5 of the 10 topics have any matching mock articles** (AI Agents, Cloud Security, Research Monitoring, India Tech, Cybersecurity — and Cybersecurity only via `Article.category`, no article currently tags the `"Cybersecurity"` topic string directly, only `"Cloud Security"`). RAG, Software Engineering, Cloud, SAP, and Blockchain exist as followable topics with zero current matches — intentional (real products let you follow an interest before matching content exists), but worth knowing when testing `/topics`.
-- **`weightLabel()` (Low/Medium/High/Essential) is a presentation-only bucketing of the 0–1 weight**, chosen to keep the preferences page from reading like a numeric dashboard slider per Module 02's design direction. The underlying `TopicPreference.weight` stored in state is still the precise slider value (steps of 0.05).
+- **Saved stories are in-memory only — not a real database, and not per-user.** `savedStoryStore` lives in the Node process's memory. It resets on every server restart/redeploy, and because there's still no auth/session (Module 01's stated non-goal, still true), **every visitor shares the same saved-stories list.** This is real mutation (unlike Modules 03–05's static mock data), which is a meaningful step up from Module 05's `SaveStoryButton` that didn't persist at all — but "real" here means "real for this running server process," not "real for this user."
+- **Archive editions are 4 fixed dates (Sept 19–22, 2026).** `mockEditions` (in `mock-newspaper.ts`) is a short hand-authored list, not derived from some larger date range. Adding a 5th historical day means adding both new dated `mockArticles` entries and a new `mockEditions` entry — `getArchive()`/`getEditionByDate()` will pick it up automatically once that's done.
+- **Search's region/source filters inherit Module 05's known simplifications** — `regionForArticle()` maps a US-based source to "Global" (no North America option exists in the region list), and Japan/South Korea/Singapore currently match zero mock sources, so filtering search by those three regions always returns no results. Same caveat as documented in Module 05.
+- **`next/form`'s client-side transition is what powers the "searching" loading state**, not a custom fetch/spinner. On a very fast local mock response this transition may be too quick to visibly notice `loading.tsx` — this is expected and will become more visible once `searchStories()` does real (slower) work.
+- **Estimated reading time (`estimateReadingTime()`) is a simple word-count heuristic** (summary word count ÷ 200wpm + 0.5 min/story overhead), not based on full article body text (which doesn't exist for most fields outside `StoryDetail`). Treat it as illustrative, not precise.
+- **The `/archive/[date]` "Also in this edition" grid can render 0 stories** for a date with only 1 story (nothing after the featured slot) — handled gracefully by `NewspaperSection`'s existing empty-return behavior, not a bug, but worth knowing if an edition looks sparse.
 
 ## Decisions that must not be changed
 
-- **`UserPreferences` now matches the Module 05 spec's exact shape**: `{ topics: TopicPreference[], regions: string[], sources: string[], contentTypes: string[], readingTime: number }`. This replaced the Module 01 placeholder shape (`preferredCategories` / `preferredTopics` / `mutedSources` / `locale`), which was never used by any built feature. `contentTypes` was added beyond the spec's literal JSON example because the surrounding spec prose explicitly lists "content types" as a 4th personalization category to support — don't remove it without re-reading Module 05's "Personalization Categories" section.
-- **`getPersonalizedStories()` never returns a raw numeric score to its caller.** Only `{ article, reasons }`. If a future module needs the score for internal sorting elsewhere, compute it in `lib/api/client.ts` and still only expose reasons outward — never let a numeric relevance value reach a component that renders to the user, per the spec's explicit "do not expose internal scoring numbers."
-- **Personalization here is rule-based and must not be described as AI-powered.** Copy on `/topics` and in `RelevantToYou`'s description explicitly says preferences are "not AI-generated yet" / "not AI-generated." Don't change this copy until a real model-driven recommendation module actually exists.
-- **Design tokens, dark mode, `PageContainer`, and the homepage/category "one composing API function per page" pattern** — unchanged from Modules 02–04, still binding. `getHomepageFeed()` is still the only function `/` calls; it now happens to call `getPersonalizedStories()` internally, but `page.tsx` still doesn't know that.
-- **`lib/analytics/signals.ts`'s `recordSignal()` is the single call site for every behavioral signal.** New signal-emitting UI should call it rather than writing to `localStorage` or `console` directly, so there's exactly one place to swap in a real endpoint later.
-- **Route structure and the Module 01 API function list are unchanged**, only extended. The one breaking change in this module (`UserPreferences`'s shape, and `HomepageFeed.personalized`'s type) is called out explicitly above rather than silently introduced.
+- **`saveStory()` / `removeSavedStory()` are only ever called from Server Actions (`lib/actions/saved-stories.ts`), never directly from a Client Component.** A Client Component importing and calling them directly would mutate a *separate, client-side copy* of the module and silently do nothing useful — this is a real Next.js footgun, not a style preference. New save/remove UI should call the existing actions, not add new ones, unless the mutation is genuinely different.
+- **Search state lives in the URL, not React state.** `SearchForm` is a Server Component using `next/form`; don't convert it to a client-side controlled-input component with `fetch`-on-change — that would lose shareable search URLs and the free `loading.tsx` integration for no benefit at mock-data scale.
+- **`searchStories(filters)` takes a `SearchFilters` object, not a bare query string.** Don't revert to a single-string signature; every existing call site (the search page) depends on the object shape now.
+- **`getSavedStories()` returns the article join (`SavedStoryWithArticle[]`), not bare `SavedStory[]`.** If a future module needs just the bookmarks without article data, add a separate function rather than changing this one's return shape again.
+- **Design tokens, dark mode, `PageContainer`, and the "one composing API function per page" pattern** — unchanged from Modules 02–05, still binding.
+- **Route structure and the Module 01 API function list are unchanged, only extended.** The breaking changes in this module (`searchStories()`'s parameter, `getSavedStories()`'s return type) are called out explicitly above rather than silently introduced.

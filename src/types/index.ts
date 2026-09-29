@@ -46,6 +46,13 @@ export interface SavedStory {
   notes?: string;
 }
 
+/** A saved bookmark joined with the article it points to — what the
+ *  /saved page and getSavedStories() actually work with. */
+export interface SavedStoryWithArticle {
+  saved: SavedStory;
+  article: Article;
+}
+
 export interface TopicPreference {
   id: string;
   /** 0–1. Set by the user via a slider; never treated as a hidden backend score. */
@@ -148,6 +155,34 @@ export interface CategoryFeed {
   secondaryStories: Article[];
   latestStories: Article[];
   trendingTopics: TrendingTopic[];
+}
+
+export interface SearchFilters {
+  query?: string;
+  /** YYYY-MM-DD, matches an edition date. */
+  date?: string;
+  /** Category.slug */
+  category?: string;
+  /** Source.id */
+  source?: string;
+  /** Topic.id */
+  topic?: string;
+  /** Region.id */
+  region?: string;
+}
+
+export interface ArchiveEntry {
+  date: string;
+  /** e.g. "22 — Today" or "21 — Monday" */
+  dayLabel: string;
+  headline: string;
+  storyCount: number;
+}
+
+export interface ArchiveMonthGroup {
+  /** e.g. "September 2026" */
+  monthLabel: string;
+  editions: ArchiveEntry[];
 }
 
 export type ChatRole = "user" | "assistant" | "system";

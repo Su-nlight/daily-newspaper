@@ -3,6 +3,7 @@ import {
   mockCategories,
   mockConversation,
   mockContentTypes,
+  mockEditions,
   mockRegions,
   mockSavedStories,
   mockSources,
@@ -13,6 +14,8 @@ import {
 } from "@/data/mock-newspaper";
 import type {
   Article,
+  ArchiveEntry,
+  ArchiveMonthGroup,
   BriefItem,
   Category,
   CategoryFeed,
@@ -23,6 +26,8 @@ import type {
   PersonalizedStory,
   Region,
   SavedStory,
+  SavedStoryWithArticle,
+  SearchFilters,
   Source,
   StoryDetail,
   Topic,
@@ -30,10 +35,39 @@ import type {
   UserPreferences,
 } from "@/types";
 import { formatCategoryLabel } from "@/lib/utils/category";
-import { formatDisplayDate } from "@/lib/utils/date";
+import { archiveDayLabel, formatDisplayDate, monthYearLabel } from "@/lib/utils/date";
 
 export async function getTodayEdition(): Promise<Edition> {
   return mockTodayEdition;
+}
+
+export async function getEditionByDate(date: string): Promise<Edition | null> {
+  return mockEditions.find((edition) => edition.date === date) ?? null;
+}
+
+/**
+ * Groups historical editions by month for the /archive timeline, most
+ * recent month and date first. Adding a new entry to mockEditions is all a
+ * future module needs to do to extend the archive.
+ */
+export async function getArchive(): Promise<ArchiveMonthGroup[]> {
+  const sortedEditions = [...mockEditions].sort(
+    (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
+  );
+
+  const groups = new Map<string, ArchiveEntry[]>();
+  for (const edition of sortedEditions) {
+    const monthLabel = monthYearLabel(edition.date);
+    const entry: ArchiveEntry = {
+      date: edition.date,
+      dayLabel: archiveDayLabel(edition.date, mockTodayEdition.date),
+      headline: edition.headline,
+      storyCount: edition.stories.length,
+    };
+    groups.set(monthLabel, [...(groups.get(monthLabel) ?? []), entry]);
+  }
+
+  return [...groups.entries()].map(([monthLabel, editions]) => ({ monthLabel, editions }));
 }
 
 /**
@@ -101,6 +135,10 @@ export async function getCategory(
   return { category, stories };
 }
 
+export async function getCategories(): Promise<Category[]> {
+  return mockCategories;
+}
+
 /**
  * Composes the "/category/[slug]" data contract: a featured story, a
  * secondary two-up area, a vertical latest feed, and trending topics
@@ -142,23 +180,83 @@ export async function getCategoryFeed(slug: string): Promise<CategoryFeed> {
   return { category, featuredStory, secondaryStories, latestStories, trendingTopics };
 }
 
-export async function searchStories(query: string): Promise<Article[]> {
-  if (!query.trim()) {
-    return mockArticles;
-  }
+/**
+ * Filters mock articles by free-text query plus optional date/category/
+ * source/topic/region facets. Reuses the same region/source resolution
+ * helpers as getPersonalizedStories, so "region" here means the same thing
+ * it means there.
+ */
+export async function searchStories(filters: SearchFilters): Promise<Article[]> {
+  const { query, date, category, source, topic, region } = filters;
+  const normalizedQuery = query?.trim().toLowerCase();
 
-  const normalizedQuery = query.toLowerCase();
+  return mockArticles.filter((article) => {
+    if (normalizedQuery) {
+      const haystack = [article.title, article.summary, article.category, article.topics.join(" ")]
+        .join(" ")
+        .toLowerCase();
+      if (!haystack.includes(normalizedQuery)) return false;
+    }
 
-  return mockArticles.filter((article) =>
-    [article.title, article.summary, article.category, article.topics.join(" ")]
-      .join(" ")
-      .toLowerCase()
-      .includes(normalizedQuery),
-  );
+    if (date && !article.publishedAt.startsWith(date)) return false;
+    if (category && article.category !== category) return false;
+
+    if (source) {
+      if (sourceIdForArticle(article) !== source) return false;
+    }
+
+    if (topic) {
+      const topicMeta = mockTopics.find((candidate) => candidate.id === topic);
+      if (!topicMeta || !article.topics.includes(topicMeta.name)) return false;
+    }
+
+    if (region) {
+      if (regionForArticle(article) !== region) return false;
+    }
+
+    return true;
+  });
 }
 
-export async function getSavedStories(): Promise<SavedStory[]> {
-  return mockSavedStories;
+/**
+ * In-memory store, seeded from mockSavedStories and mutated only through
+ * saveStory()/removeSavedStory() (called from Server Actions — see
+ * lib/actions/saved-stories.ts). This resets on server restart; there's no
+ * database yet, see docs/PROJECT_STATE.md. It's also shared across all
+ * visitors, since there's still no per-user auth/session.
+ */
+const savedStoryStore: SavedStory[] = [...mockSavedStories];
+
+export async function getSavedStories(): Promise<SavedStoryWithArticle[]> {
+  return savedStoryStore
+    .map((saved) => {
+      const article = mockArticles.find((candidate) => candidate.id === saved.articleId);
+      return article ? { saved, article } : null;
+    })
+    .filter((entry): entry is SavedStoryWithArticle => entry !== null)
+    .sort((a, b) => new Date(b.saved.savedAt).getTime() - new Date(a.saved.savedAt).getTime());
+}
+
+export async function isStorySaved(articleId: string): Promise<boolean> {
+  return savedStoryStore.some((saved) => saved.articleId === articleId);
+}
+
+export async function saveStory(articleId: string): Promise<SavedStory> {
+  const existing = savedStoryStore.find((saved) => saved.articleId === articleId);
+  if (existing) return existing;
+
+  const entry: SavedStory = {
+    id: `saved-${articleId}`,
+    articleId,
+    savedAt: new Date().toISOString(),
+  };
+  savedStoryStore.push(entry);
+  return entry;
+}
+
+export async function removeSavedStory(articleId: string): Promise<void> {
+  const index = savedStoryStore.findIndex((saved) => saved.articleId === articleId);
+  if (index !== -1) savedStoryStore.splice(index, 1);
 }
 
 export async function getTopics(): Promise<Topic[]> {

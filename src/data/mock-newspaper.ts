@@ -313,6 +313,29 @@ export const mockArticles: Article[] = [
     publishedAt: "2026-09-21T20:05:00Z",
     topics: ["Research Monitoring"],
   },
+  {
+    id: "story-open-source-license-shift",
+    title: "Popular build-tool project moves to a source-available license",
+    summary:
+      "Maintainers cited unpaid commercial resale by hosting providers as the reason for leaving a fully open-source license, reviving a recurring debate over sustainable funding models.",
+    category: "software-engineering",
+    source: "Tech Ledger",
+    sourceUrl: "https://techledger.example.com/build-tool-license-shift",
+    publishedAt: "2026-09-19T10:30:00Z",
+    topics: ["Research Monitoring"],
+  },
+  {
+    id: "story-quantum-error-correction",
+    title: "Lab reports error-correction milestone on a 48-qubit processor",
+    summary:
+      "Researchers demonstrated logical error rates low enough to sustain longer computations, a step toward fault-tolerant quantum hardware rather than a deployable system today.",
+    category: "research",
+    source: "Global Wire",
+    sourceUrl: "https://globalwire.example.com/quantum-error-correction",
+    publishedAt: "2026-09-19T14:00:00Z",
+    imageUrl: "https://images.example.com/quantum-error-correction.jpg",
+    topics: ["Research Monitoring"],
+  },
 ];
 
 export const mockTodayEdition: Edition = {
@@ -323,6 +346,45 @@ export const mockTodayEdition: Edition = {
     "Today's edition tracks policy momentum in AI, growing software supply-chain threats, and new research partnerships shaping global technology strategy.",
   stories: mockArticles.slice(0, 4),
 };
+
+function articlesForDate(date: string): Article[] {
+  return mockArticles.filter((article) => article.publishedAt.startsWith(date));
+}
+
+/**
+ * Historical editions for the Archive (Module 06), one per date. The
+ * current date reuses `mockTodayEdition` rather than duplicating it;
+ * earlier dates are freshly authored with their own headline/summary and
+ * pull their stories directly from `mockArticles` by publish date, so
+ * adding a new dated article automatically surfaces it in its edition.
+ */
+export const mockEditions: Edition[] = [
+  mockTodayEdition,
+  {
+    id: "edition-2026-09-21",
+    date: "2026-09-21",
+    headline: "Supply-chain ransomware, a Japan–India chip corridor, and a RAG benchmark",
+    summary:
+      "Security researchers flag a shift toward attacking CI/CD pipelines, Japan and India fund a semiconductor packaging corridor, and a new benchmark exposes retrieval limits in long-document RAG.",
+    stories: articlesForDate("2026-09-21"),
+  },
+  {
+    id: "edition-2026-09-20",
+    date: "2026-09-20",
+    headline: "WebAssembly at the edge and an AI multi-agent debugger",
+    summary:
+      "Engineering teams report gains moving latency-sensitive services to WebAssembly, and a research lab releases tracing tools for coordinated LLM agent failures.",
+    stories: articlesForDate("2026-09-20"),
+  },
+  {
+    id: "edition-2026-09-19",
+    date: "2026-09-19",
+    headline: "A build-tool license change and a quantum error-correction milestone",
+    summary:
+      "A widely used build tool moves off a fully open-source license amid funding debates, while a research lab reports a logical error-correction milestone on a 48-qubit processor.",
+    stories: articlesForDate("2026-09-19"),
+  },
+];
 
 /**
  * Hand-authored long-form detail content for the story-detail page
