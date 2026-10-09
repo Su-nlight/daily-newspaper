@@ -9,7 +9,7 @@ changing generate_answer's interface.
 
 from app.models.article import Article
 
-MAX_CONTEXT_CHARS = 4000
+MAX_CONTEXT_CHARS = 6000
 
 
 def format_context(documents: list[Article]) -> str:
@@ -25,6 +25,12 @@ def format_context(documents: list[Article]) -> str:
             f"Source: {doc.source} ({doc.published_at.date().isoformat()})\n"
             f"{doc.summary}\n"
         )
+        if doc.what_happened:
+            block += f"What happened: {doc.what_happened}\n"
+        if doc.why_it_matters:
+            block += f"Why it matters: {doc.why_it_matters}\n"
+        if doc.key_facts:
+            block += "Key facts: " + " ".join(doc.key_facts) + "\n"
         if used + len(block) > MAX_CONTEXT_CHARS:
             break
         blocks.append(block)

@@ -10,6 +10,18 @@ _STORY_HINTS = ("this story", "this article", "the article", "this piece")
 _RESEARCH_KEYWORDS = ("research", "paper", "study", "benchmark", "dataset", "arxiv")
 _CAREER_KEYWORDS = ("job", "career", "hiring", "resume", "salary", "interview", "skill")
 _NEWS_KEYWORDS = ("today", "latest", "news", "happening", "headline", "edition", "brief")
+# Phrases that point at whatever page the user is looking at (an edition, a
+# category, a list of search results) rather than a topic.
+_SCOPE_HINTS = (
+    "these results",
+    "these stories",
+    "these articles",
+    "this edition",
+    "this category",
+    "the results",
+    "top stories",
+    "most important",
+)
 
 
 def classify_query(state: GraphState) -> GraphState:
@@ -22,7 +34,9 @@ def classify_query(state: GraphState) -> GraphState:
         query_type = "research"
     elif any(keyword in query for keyword in _CAREER_KEYWORDS):
         query_type = "career"
-    elif any(keyword in query for keyword in _NEWS_KEYWORDS):
+    elif any(keyword in query for keyword in _NEWS_KEYWORDS) or any(
+        hint in query for hint in _SCOPE_HINTS
+    ):
         query_type = "news"
     else:
         query_type = "general"

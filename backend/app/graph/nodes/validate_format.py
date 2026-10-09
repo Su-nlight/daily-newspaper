@@ -21,7 +21,7 @@ def validate_format(state: GraphState) -> GraphState:
 
     cited_indexes = {int(match) for match in _CITATION_RE.findall(answer)}
     cited_sources = [
-        ChatSourceRef(publisher=doc.source, url=doc.source_url, title=doc.title)
+        ChatSourceRef(publisher=doc.source, url=doc.source_url, title=doc.title, index=index)
         for index, doc in enumerate(documents, start=1)
         if index in cited_indexes
     ]
@@ -30,8 +30,8 @@ def validate_format(state: GraphState) -> GraphState:
     # what was retrieved rather than leaving an unverifiable factual claim
     # with no attached sources.
     sources = cited_sources or [
-        ChatSourceRef(publisher=doc.source, url=doc.source_url, title=doc.title)
-        for doc in documents
+        ChatSourceRef(publisher=doc.source, url=doc.source_url, title=doc.title, index=index)
+        for index, doc in enumerate(documents, start=1)
     ]
 
     return {"sources": sources}

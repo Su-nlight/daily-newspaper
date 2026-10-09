@@ -15,5 +15,7 @@ def retrieve_context(state: GraphState) -> GraphState:
         query=state.get("query", ""),
         story_id=state.get("story_id"),
         category=state.get("category"),
+        edition_id=state.get("edition_id"),
+        search_result_ids=state.get("search_result_ids"),
     )
     return {"retrieved_documents": documents}

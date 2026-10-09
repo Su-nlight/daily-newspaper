@@ -25,6 +25,11 @@ class GraphState(TypedDict, total=False):
     story_id: str | None
     edition_id: str | None
     category: str | None
+    search_query: str | None
+    search_result_ids: list[str] | None
+
+    # Prior turns from the frontend ({"role", "content"}), oldest first.
+    history: list[dict[str, str]]
 
     retrieved_documents: list[Article]
     sources: list[ChatSourceRef]
