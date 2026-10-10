@@ -1,96 +1,71 @@
-import type { ChatStoryContext } from "@/types";
+"use client";
+
+import Link from "next/link";
+import type { KeyboardEvent } from "react";
+
+import { ChatWindow } from "@/components/chat/ChatWindow";
+import { FULL_CHAT_PATH, useChat } from "@/components/chat/ChatProvider";
 
 interface ChatPanelShellProps {
-  onClose: () => void;
-  activeStory?: ChatStoryContext | null;
-  onClearContext?: () => void;
+  id?: string;
 }
 
-export function ChatPanelShell({ onClose, activeStory, onClearContext }: ChatPanelShellProps) {
+const headerButton =
+  "text-caption flex h-7 items-center justify-center rounded-full border border-border px-2.5 text-foreground transition-colors hover:border-border-strong";
+
+/** The compact chat panel opened from the bubble: header, conversation, input. */
+export function ChatPanelShell({ id }: ChatPanelShellProps) {
+  const { closeChat, messages, resetConversation } = useChat();
+
+  function handleKeyDown(event: KeyboardEvent<HTMLDivElement>) {
+    if (event.key === "Escape") {
+      event.stopPropagation();
+      closeChat();
+    }
+  }
+
   return (
     <div
+      id={id}
       role="dialog"
       aria-label="Daily Signal AI assistant"
-      className="flex h-[28rem] w-[22rem] max-w-[calc(100vw-2.5rem)] flex-col overflow-hidden rounded-lg border border-border bg-background-elevated shadow-xl"
+      onKeyDown={handleKeyDown}
+      className="flex h-[34rem] max-h-[calc(100dvh-7rem)] w-[26rem] max-w-[calc(100vw-2.5rem)] flex-col overflow-hidden rounded-lg border border-border bg-background-elevated shadow-xl"
     >
-      <div className="flex items-center justify-between border-b border-border px-4 py-3">
-        <div>
+      <div className="flex items-center justify-between gap-2 border-b border-border px-4 py-3">
+        <div className="min-w-0">
           <p className="text-section-title text-accent">Daily Signal AI</p>
-          <p className="text-caption">Ask about today&apos;s stories</p>
         </div>
-        <button
-          type="button"
-          onClick={onClose}
-          aria-label="Close chat"
-          className="flex size-7 items-center justify-center rounded-full border border-border text-foreground transition-colors hover:border-border-strong"
-        >
-          <svg
-            aria-hidden="true"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.6"
-            className="size-3.5"
-          >
-            <path strokeLinecap="round" d="M6 6l12 12M18 6L6 18" />
-          </svg>
-        </button>
-      </div>
-
-      {activeStory ? (
-        <div className="flex items-start justify-between gap-2 border-b border-border bg-background px-4 py-2.5">
-          <p className="text-caption">
-            Discussing: <span className="text-foreground">{activeStory.title}</span>
-          </p>
-          {onClearContext ? (
-            <button
-              type="button"
-              onClick={onClearContext}
-              className="text-caption shrink-0 text-accent hover:underline"
-            >
-              Clear
+        <div className="flex shrink-0 items-center gap-1.5">
+          {messages.length > 0 ? (
+            <button type="button" onClick={resetConversation} className={headerButton}>
+              New chat
             </button>
           ) : null}
-        </div>
-      ) : null}
-
-      <div className="flex flex-1 flex-col justify-end gap-3 overflow-y-auto px-4 py-4">
-        <div className="max-w-[85%] self-start rounded-lg rounded-bl-sm bg-background px-3 py-2">
-          <p className="text-caption text-foreground">
-            {activeStory
-              ? `Hi — I'm the Daily Signal assistant. Conversational answers about "${activeStory.title}" are coming in a later module.`
-              : "Hi — I'm the Daily Signal assistant. Conversational answers over your edition are coming in a later module."}
-          </p>
-        </div>
-      </div>
-
-      <div className="border-t border-border p-3">
-        <div className="flex items-center gap-2 rounded-full border border-border px-3 py-2">
-          <input
-            type="text"
-            disabled
-            placeholder="Chat backend not connected yet"
-            className="text-body w-full bg-transparent text-foreground placeholder:text-muted focus:outline-none disabled:cursor-not-allowed"
-          />
+          <Link href={FULL_CHAT_PATH} onClick={closeChat} className={headerButton}>
+            Open full chat
+          </Link>
           <button
             type="button"
-            disabled
-            aria-label="Send message"
-            className="flex size-7 shrink-0 items-center justify-center rounded-full bg-accent text-accent-foreground opacity-50"
+            onClick={closeChat}
+            aria-label="Close chat"
+            className="flex size-7 items-center justify-center rounded-full border border-border text-foreground transition-colors hover:border-border-strong"
           >
             <svg
               aria-hidden="true"
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
-              strokeWidth="1.8"
+              strokeWidth="1.6"
               className="size-3.5"
             >
-              <path strokeLinecap="round" strokeLinejoin="round" d="m5 12 14-7-5 7 5 7-14-7Z" />
+              <path strokeLinecap="round" d="M6 6l12 12M18 6L6 18" />
             </svg>
           </button>
         </div>
       </div>
+
+      <ChatWindow variant="compact" focusInputOnMount />
     </div>
   );
 }
