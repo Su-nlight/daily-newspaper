@@ -17,7 +17,10 @@ class Settings(BaseSettings):
     groq_api_key: str | None = None
 
     # The one place the default model name lives. Override with GROQ_MODEL.
-    groq_model: str = "llama-3.3-70b-versatile"
+    # llama-3.3-70b-versatile is Enterprise-only on Groq (contact-sales
+    # access) — a standard developer key gets a 404 for it.
+    # openai/gpt-oss-20b is a current standard Production-tier model.
+    groq_model: str = "openai/gpt-oss-20b"
 
     groq_timeout_seconds: float = 20.0
     groq_max_tokens: int = 800

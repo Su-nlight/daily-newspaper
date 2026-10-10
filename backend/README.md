@@ -3,10 +3,13 @@
 FastAPI + LangGraph + Groq backend for Daily Signal's conversational
 assistant and read-only content endpoints. Built per `docs/Module-07.md`.
 
-**This backend is not yet wired into the Next.js frontend.** The frontend
-still uses its own TypeScript mock data (`src/lib/api/client.ts`). This
-module is backend-only, standalone groundwork — connecting the two is a
-future module's job. See `docs/PROJECT_STATE.md`.
+The Next.js chat (Module 08) calls `POST /api/chat/stream` from the browser
+(`src/lib/api/chat.ts`). The rest of the frontend still uses its own mock data
+(`src/lib/api/client.ts`). See `docs/PROJECT_STATE.md`.
+
+**Corpus:** answers are grounded in `app/data/corpus.json`, generated from the
+frontend's mock data. After changing `src/data/mock-newspaper.ts`, run
+`npm run export:corpus` from the repo root.
 
 ## Setup
 
@@ -40,7 +43,7 @@ configured yet" message instead of a real answer. This is intentional: see
 pytest
 ```
 
-Tests mock `app.services.llm` so they never make a real network call to
+(52 tests.) Tests mock `app.services.llm` so they never make a real network call to
 Groq (and can't — this environment generally won't have a Groq API key or
 network access to `api.groq.com` either way).
 
@@ -113,3 +116,25 @@ and streams tokens from `llm.stream_completion()` as they arrive from Groq.
 | GET    | `/api/stories/{id}`    | Single story                              |
 | GET    | `/api/search`          | `?q=&category=&source=&topic=`            |
 | GET    | `/api/health`          | Liveness + whether Groq is configured     |
+
+## Chat request
+
+```json
+{
+  "message": "How could this affect my research?",
+  "conversation_id": "optional, echoed back",
+  "history": [{"role": "user", "content": "..."}, {"role": "assistant", "content": "..."}],
+  "context": {
+    "story_id": "story the user is reading",
+    "edition_id": "edition being viewed",
+    "category": "category page being viewed",
+    "search_query": "current search",
+    "search_result_ids": ["ids of the current search results"]
+  }
+}
+```
+
+Everything except `message` is optional. `history` (last 8 turns are used)
+makes follow-ups work; the `context` fields scope retrieval (a story id wins,
+then search results, then category, then edition). Each returned source has an
+`index` matching the `[n]` citation marker in the answer text.

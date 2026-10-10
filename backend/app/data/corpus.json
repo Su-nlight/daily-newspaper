@@ -1,0 +1,323 @@
+{
+  "articles": [
+    {
+      "id": "story-ai-policy-2026",
+      "title": "India releases draft framework for enterprise AI model audits",
+      "summary": "India's technology ministry proposed quarterly audit standards for high-impact enterprise AI deployments across finance and healthcare.",
+      "category": "ai",
+      "source": "Tech Ledger",
+      "source_url": "https://techledger.example.com/ai-policy-audits",
+      "published_at": "2026-09-22T07:30:00Z",
+      "image_url": "https://images.example.com/ai-policy-audit.jpg",
+      "topics": [
+        "AI Agents",
+        "India Tech"
+      ],
+      "what_happened": "India's technology ministry published a draft framework requiring enterprises to submit quarterly audits for AI systems used in finance and healthcare decision-making. The draft covers model documentation, bias testing thresholds, and incident-reporting timelines, with a 60-day public comment window before rules are finalized.",
+      "why_it_matters": "This is the first sector-specific AI audit regime proposed by an Indian regulator rather than a general-purpose AI law, and it mirrors approaches already emerging in the EU and Singapore. Teams shipping AI features into regulated Indian markets should expect documentation and testing requirements to become a procurement checklist item well before enforcement begins.",
+      "key_facts": [
+        "Applies to AI systems used in lending, insurance underwriting, and clinical decision support.",
+        "Quarterly audit submissions would be required, with a named accountable officer per deployment.",
+        "Public comment period runs 60 days from the draft's publication date.",
+        "No penalty structure has been proposed yet; that is expected in a follow-up draft."
+      ]
+    },
+    {
+      "id": "story-ransomware-shift",
+      "title": "Ransomware groups pivot to software supply-chain extortion",
+      "summary": "Security analysts report a rise in attacks targeting build systems and package registries, with demands tied to release cycles.",
+      "category": "cybersecurity",
+      "source": "Security Post",
+      "source_url": "https://securitypost.example.com/supply-chain-extortion",
+      "published_at": "2026-09-22T09:10:00Z",
+      "image_url": "https://images.example.com/ransomware-supply-chain.jpg",
+      "topics": [
+        "Cloud Security",
+        "Research Monitoring"
+      ],
+      "what_happened": "Security researchers tracking a cluster of ransomware operators found a marked shift toward compromising CI/CD infrastructure and public package registries, then timing extortion demands to coincide with scheduled release windows to maximize pressure on engineering teams.",
+      "why_it_matters": "Traditional ransomware defenses focus on endpoint and database protection; this shift means build systems — often treated as internal infrastructure with looser access controls — are now a primary target. Teams that haven't extended zero-trust practices to CI runners and artifact registries are more exposed than they may realize.",
+      "key_facts": [
+        "Attacks cluster around scheduled release windows to increase extortion leverage.",
+        "Compromised build credentials were the most common initial access vector observed.",
+        "Analysts recommend short-lived, scoped credentials for CI runners as a primary mitigation."
+      ]
+    },
+    {
+      "id": "story-rust-backend-scale",
+      "title": "Open-source observability team cuts backend costs with Rust rewrite",
+      "summary": "A high-traffic observability platform shared benchmarks showing lower compute spend after migrating ingestion services from Go to Rust.",
+      "category": "software-engineering",
+      "source": "Global Wire",
+      "source_url": "https://globalwire.example.com/rust-backend-scale",
+      "published_at": "2026-09-21T19:45:00Z",
+      "image_url": "https://images.example.com/rust-observability.jpg",
+      "topics": [
+        "Research Monitoring"
+      ],
+      "what_happened": "The team behind a widely used open-source observability platform published benchmarks comparing their Go-based ingestion service to a Rust rewrite completed over two quarters, reporting lower per-node CPU usage and reduced garbage-collection-related latency spikes under sustained write load.",
+      "why_it_matters": "The benchmarks add to a growing body of public evidence from infrastructure teams evaluating Rust for latency-sensitive, high-throughput services, an area where garbage-collected languages can hit predictability limits. The published methodology also gives other teams a reference to replicate the comparison against their own workloads.",
+      "key_facts": [
+        "Migration was scoped to the ingestion tier only, not the full platform.",
+        "Benchmarks report lower peak memory and fewer GC-related latency spikes under sustained load.",
+        "The team published its benchmark harness alongside the results."
+      ]
+    },
+    {
+      "id": "story-semiconductor-alliance",
+      "title": "Japan and India announce semiconductor research corridor",
+      "summary": "The two governments announced a joint funding program for advanced chip packaging research and university partnerships.",
+      "category": "world",
+      "source": "Global Wire",
+      "source_url": "https://globalwire.example.com/semiconductor-corridor",
+      "published_at": "2026-09-21T13:20:00Z",
+      "image_url": "https://images.example.com/semiconductor-corridor.jpg",
+      "topics": [
+        "India Tech",
+        "Research Monitoring"
+      ],
+      "what_happened": "Japan and India signed a joint funding agreement establishing a semiconductor research corridor focused on advanced chip packaging techniques, pairing Japanese industrial partners with Indian university research groups and committing multi-year funding to shared facilities.",
+      "why_it_matters": "Advanced packaging — rather than leading-edge fabrication — is where much of the next wave of semiconductor performance gains is expected to come from, and this corridor positions both countries to build research capacity in that specific niche rather than competing directly with existing fabrication hubs.",
+      "key_facts": [
+        "Focus is on advanced chip packaging, not fabrication.",
+        "Funding is structured as a multi-year joint program between government and university partners.",
+        "Initial shared research facilities are planned in both countries."
+      ]
+    },
+    {
+      "id": "story-ai-debugger",
+      "title": "Research lab introduces AI debugger for multi-agent workflows",
+      "summary": "A new open-source toolkit traces decision paths across coordinated LLM agents to reduce failure rates in production pipelines.",
+      "category": "research",
+      "source": "Tech Ledger",
+      "source_url": "https://techledger.example.com/ai-debugger-toolkit",
+      "published_at": "2026-09-20T15:00:00Z",
+      "image_url": null,
+      "topics": [
+        "AI Agents",
+        "Research Monitoring"
+      ],
+      "what_happened": null,
+      "why_it_matters": null,
+      "key_facts": []
+    },
+    {
+      "id": "story-rag-benchmark",
+      "title": "New benchmark exposes retrieval gaps in long-context RAG systems",
+      "summary": "Researchers found that most retrieval-augmented pipelines lose accuracy sharply past 50 pages of source context, prompting renewed interest in hybrid retrieval strategies.",
+      "category": "research",
+      "source": "Tech Ledger",
+      "source_url": "https://techledger.example.com/rag-benchmark",
+      "published_at": "2026-09-21T08:15:00Z",
+      "image_url": "https://images.example.com/rag-benchmark.jpg",
+      "topics": [
+        "AI Agents",
+        "Research Monitoring"
+      ],
+      "what_happened": "A new open benchmark testing retrieval-augmented generation systems across long-document question answering found that most evaluated pipelines lost significant answer accuracy once the source corpus exceeded roughly 50 pages, even when the underlying language model supported a much longer context window.",
+      "why_it_matters": "The results suggest the bottleneck for long-context RAG is increasingly the retrieval step rather than the model's context window, which has implications for teams that assumed larger context windows alone would solve long-document accuracy. Hybrid retrieval strategies — combining dense retrieval with structured indexing — outperformed single-method approaches in the benchmark.",
+      "key_facts": [
+        "Accuracy drop-off begins around the 50-page mark for most evaluated pipelines.",
+        "Hybrid retrieval (dense + structured indexing) outperformed single-method retrieval.",
+        "Benchmark dataset and evaluation harness were released publicly alongside the paper."
+      ]
+    },
+    {
+      "id": "story-model-router",
+      "title": "Startup raises Series B for open-source model routing layer",
+      "summary": "The routing engine dynamically selects between small and large models based on task complexity, cutting inference costs by up to 40% in early enterprise pilots.",
+      "category": "ai",
+      "source": "Global Wire",
+      "source_url": "https://globalwire.example.com/model-router-series-b",
+      "published_at": "2026-09-22T05:40:00Z",
+      "image_url": "https://images.example.com/model-router.jpg",
+      "topics": [
+        "AI Agents"
+      ],
+      "what_happened": null,
+      "why_it_matters": null,
+      "key_facts": []
+    },
+    {
+      "id": "story-cloud-breach-disclosure",
+      "title": "Major cloud provider discloses misconfigured storage exposure",
+      "summary": "The provider confirmed a limited exposure window affecting enterprise storage buckets and has rolled out default encryption-at-rest for new accounts.",
+      "category": "cybersecurity",
+      "source": "Security Post",
+      "source_url": "https://securitypost.example.com/cloud-breach-disclosure",
+      "published_at": "2026-09-22T06:05:00Z",
+      "image_url": "https://images.example.com/cloud-breach.jpg",
+      "topics": [
+        "Cloud Security"
+      ],
+      "what_happened": "A major cloud provider disclosed that a storage-service misconfiguration left some enterprise storage buckets exposed for a limited window. The company has not yet published an affected-account count but confirmed the exposure predates its recently rolled out default encryption-at-rest policy for new accounts.",
+      "why_it_matters": "Default encryption-at-rest closes one specific gap, but the disclosure is a reminder that misconfiguration — not just unpatched vulnerabilities — remains one of the most common root causes of cloud data exposure. Teams relying on the provider's default security posture rather than auditing their own bucket policies were more exposed.",
+      "key_facts": [
+        "Root cause was a storage-service misconfiguration, not an external breach.",
+        "Default encryption-at-rest for new accounts was enabled following the incident.",
+        "The provider has not yet disclosed the number of affected accounts."
+      ]
+    },
+    {
+      "id": "story-zero-trust-adoption",
+      "title": "Zero-trust adoption crosses 60% among Fortune 500 firms",
+      "summary": "A new industry survey shows zero-trust network access has overtaken VPN-based models as the default enterprise architecture for the first time.",
+      "category": "cybersecurity",
+      "source": "Security Post",
+      "source_url": "https://securitypost.example.com/zero-trust-adoption",
+      "published_at": "2026-09-21T11:30:00Z",
+      "image_url": null,
+      "topics": [
+        "Cloud Security",
+        "Research Monitoring"
+      ],
+      "what_happened": null,
+      "why_it_matters": null,
+      "key_facts": []
+    },
+    {
+      "id": "story-webassembly-edge",
+      "title": "WebAssembly runtimes gain ground in edge compute deployments",
+      "summary": "Engineering teams report faster cold-start times and smaller deployment footprints after moving latency-sensitive services from containers to WASM.",
+      "category": "software-engineering",
+      "source": "Global Wire",
+      "source_url": "https://globalwire.example.com/webassembly-edge",
+      "published_at": "2026-09-21T16:10:00Z",
+      "image_url": "https://images.example.com/webassembly-edge.jpg",
+      "topics": [
+        "Research Monitoring"
+      ],
+      "what_happened": null,
+      "why_it_matters": null,
+      "key_facts": []
+    },
+    {
+      "id": "story-typed-apis-survey",
+      "title": "Survey: teams shipping typed APIs report 30% fewer integration bugs",
+      "summary": "Engineering leaders point to end-to-end type safety across client and server boundaries as the single highest-leverage reliability investment this year.",
+      "category": "software-engineering",
+      "source": "Tech Ledger",
+      "source_url": "https://techledger.example.com/typed-apis-survey",
+      "published_at": "2026-09-20T09:00:00Z",
+      "image_url": null,
+      "topics": [
+        "Research Monitoring"
+      ],
+      "what_happened": null,
+      "why_it_matters": null,
+      "key_facts": []
+    },
+    {
+      "id": "story-india-startup-funding",
+      "title": "India's enterprise SaaS startups post strongest quarter since 2022",
+      "summary": "Fresh funding data shows a rebound led by AI-infrastructure and fintech-adjacent startups based in Bengaluru and Pune.",
+      "category": "world",
+      "source": "Global Wire",
+      "source_url": "https://globalwire.example.com/india-startup-funding",
+      "published_at": "2026-09-22T04:20:00Z",
+      "image_url": "https://images.example.com/india-startup-funding.jpg",
+      "topics": [
+        "India Tech"
+      ],
+      "what_happened": null,
+      "why_it_matters": null,
+      "key_facts": []
+    },
+    {
+      "id": "story-eu-tech-regulation",
+      "title": "EU proposes unified compute-reporting rule for large model training runs",
+      "summary": "The draft rule would require disclosure of compute usage above a set threshold, aligning the bloc's approach more closely with emerging US guidance.",
+      "category": "world",
+      "source": "Global Wire",
+      "source_url": "https://globalwire.example.com/eu-compute-reporting",
+      "published_at": "2026-09-21T20:05:00Z",
+      "image_url": null,
+      "topics": [
+        "Research Monitoring"
+      ],
+      "what_happened": null,
+      "why_it_matters": null,
+      "key_facts": []
+    },
+    {
+      "id": "story-open-source-license-shift",
+      "title": "Popular build-tool project moves to a source-available license",
+      "summary": "Maintainers cited unpaid commercial resale by hosting providers as the reason for leaving a fully open-source license, reviving a recurring debate over sustainable funding models.",
+      "category": "software-engineering",
+      "source": "Tech Ledger",
+      "source_url": "https://techledger.example.com/build-tool-license-shift",
+      "published_at": "2026-09-19T10:30:00Z",
+      "image_url": null,
+      "topics": [
+        "Research Monitoring"
+      ],
+      "what_happened": null,
+      "why_it_matters": null,
+      "key_facts": []
+    },
+    {
+      "id": "story-quantum-error-correction",
+      "title": "Lab reports error-correction milestone on a 48-qubit processor",
+      "summary": "Researchers demonstrated logical error rates low enough to sustain longer computations, a step toward fault-tolerant quantum hardware rather than a deployable system today.",
+      "category": "research",
+      "source": "Global Wire",
+      "source_url": "https://globalwire.example.com/quantum-error-correction",
+      "published_at": "2026-09-19T14:00:00Z",
+      "image_url": "https://images.example.com/quantum-error-correction.jpg",
+      "topics": [
+        "Research Monitoring"
+      ],
+      "what_happened": null,
+      "why_it_matters": null,
+      "key_facts": []
+    }
+  ],
+  "editions": [
+    {
+      "id": "edition-2026-09-22",
+      "date": "2026-09-22",
+      "headline": "AI governance and cyber resilience lead today's brief",
+      "summary": "Today's edition tracks policy momentum in AI, growing software supply-chain threats, and new research partnerships shaping global technology strategy.",
+      "story_ids": [
+        "story-ai-policy-2026",
+        "story-ransomware-shift",
+        "story-rust-backend-scale",
+        "story-semiconductor-alliance"
+      ]
+    },
+    {
+      "id": "edition-2026-09-21",
+      "date": "2026-09-21",
+      "headline": "Supply-chain ransomware, a Japan–India chip corridor, and a RAG benchmark",
+      "summary": "Security researchers flag a shift toward attacking CI/CD pipelines, Japan and India fund a semiconductor packaging corridor, and a new benchmark exposes retrieval limits in long-document RAG.",
+      "story_ids": [
+        "story-rust-backend-scale",
+        "story-semiconductor-alliance",
+        "story-rag-benchmark",
+        "story-zero-trust-adoption",
+        "story-webassembly-edge",
+        "story-eu-tech-regulation"
+      ]
+    },
+    {
+      "id": "edition-2026-09-20",
+      "date": "2026-09-20",
+      "headline": "WebAssembly at the edge and an AI multi-agent debugger",
+      "summary": "Engineering teams report gains moving latency-sensitive services to WebAssembly, and a research lab releases tracing tools for coordinated LLM agent failures.",
+      "story_ids": [
+        "story-ai-debugger",
+        "story-typed-apis-survey"
+      ]
+    },
+    {
+      "id": "edition-2026-09-19",
+      "date": "2026-09-19",
+      "headline": "A build-tool license change and a quantum error-correction milestone",
+      "summary": "A widely used build tool moves off a fully open-source license amid funding debates, while a research lab reports a logical error-correction milestone on a 48-qubit processor.",
+      "story_ids": [
+        "story-open-source-license-shift",
+        "story-quantum-error-correction"
+      ]
+    }
+  ]
+}

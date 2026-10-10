@@ -7,18 +7,31 @@ from fastapi.responses import StreamingResponse
 
 from app.graph.graph import get_graph
 from app.graph.nodes.classify_query import classify_query
-from app.graph.nodes.generate_answer import SYSTEM_PROMPT
+from app.graph.nodes.generate_answer import build_messages, no_coverage_message
 from app.graph.nodes.retrieve_context import retrieve_context
 from app.graph.nodes.validate_format import validate_format
 from app.graph.state import GraphState
 from app.models.chat import ChatRequest, ChatResponse
-from app.services import llm, summarization
+from app.services import llm
 
 router = APIRouter(prefix="/api", tags=["chat"])
 
 
 def _sse(payload: dict) -> str:
     return f"data: {json.dumps(payload)}\n\n"
+
+
+def _initial_state(payload: ChatRequest) -> GraphState:
+    return {
+        "messages": [{"role": "user", "content": payload.message}],
+        "query": payload.message,
+        "story_id": payload.context.story_id,
+        "edition_id": payload.context.edition_id,
+        "category": payload.context.category,
+        "search_query": payload.context.search_query,
+        "search_result_ids": payload.context.search_result_ids,
+        "history": [turn.model_dump() for turn in payload.history],
+    }
 
 
 @router.post("/chat", response_model=ChatResponse)
@@ -28,16 +41,8 @@ async def chat(payload: ChatRequest) -> ChatResponse:
 
     conversation_id = payload.conversation_id or str(uuid.uuid4())
 
-    initial_state: GraphState = {
-        "messages": [{"role": "user", "content": payload.message}],
-        "query": payload.message,
-        "story_id": payload.context.story_id,
-        "edition_id": payload.context.edition_id,
-        "category": payload.context.category,
-    }
-
     graph = get_graph()
-    result = await graph.ainvoke(initial_state)
+    result = await graph.ainvoke(_initial_state(payload))
 
     return ChatResponse(
         message=result.get("answer", ""),
@@ -52,17 +57,17 @@ async def chat_stream(payload: ChatRequest) -> StreamingResponse:
     (classify_query, retrieve_context, validate_format — all plain sync
     functions, safe to call outside the compiled graph) and streams tokens
     from Groq directly rather than waiting for a full single-shot answer.
+
+    Events: {"type": "token", "content"}, then {"type": "done", "sources",
+    "conversation_id"}; or {"type": "error", "message"} if the stream fails.
     """
     if not payload.message.strip():
         raise HTTPException(status_code=422, detail="message must not be empty")
 
+    conversation_id = payload.conversation_id or str(uuid.uuid4())
+
     async def event_generator() -> AsyncGenerator[str, None]:
-        state: GraphState = {
-            "query": payload.message,
-            "story_id": payload.context.story_id,
-            "edition_id": payload.context.edition_id,
-            "category": payload.context.category,
-        }
+        state = _initial_state(payload)
         state.update(classify_query(state))
         state.update(retrieve_context(state))
 
@@ -70,28 +75,16 @@ async def chat_stream(payload: ChatRequest) -> StreamingResponse:
         documents = state.get("retrieved_documents", [])
 
         if query_type != "general" and not documents:
-            message = (
-                "I couldn't find any Daily Signal coverage matching that — try "
-                "rephrasing, or ask about a specific story you're reading."
-            )
-            yield _sse({"type": "token", "content": message})
-            yield _sse({"type": "done", "sources": []})
+            yield _sse({"type": "token", "content": no_coverage_message()})
+            yield _sse({"type": "done", "sources": [], "conversation_id": conversation_id})
             return
 
-        if query_type == "general":
-            user_prompt = payload.message
-        else:
-            context_block = summarization.format_context(documents)
-            user_prompt = (
-                f"CONTEXT:\n{context_block}\n\n"
-                f"QUESTION: {payload.message}\n\n"
-                "Answer using only the context above, citing sources like [1]."
-            )
-
-        messages = [
-            {"role": "system", "content": SYSTEM_PROMPT},
-            {"role": "user", "content": user_prompt},
-        ]
+        messages = build_messages(
+            query=payload.message,
+            query_type=query_type,
+            documents=documents,
+            history=state.get("history"),
+        )
 
         full_text = ""
         try:
@@ -105,7 +98,7 @@ async def chat_stream(payload: ChatRequest) -> StreamingResponse:
                     "content": "The AI assistant isn't configured yet — GROQ_API_KEY is missing.",
                 }
             )
-            yield _sse({"type": "done", "sources": []})
+            yield _sse({"type": "done", "sources": [], "conversation_id": conversation_id})
             return
         except llm.LLMRequestError as exc:
             yield _sse({"type": "error", "message": str(exc)})
@@ -114,6 +107,6 @@ async def chat_stream(payload: ChatRequest) -> StreamingResponse:
         state["answer"] = full_text
         state.update(validate_format(state))
         sources = [source.model_dump() for source in state.get("sources", [])]
-        yield _sse({"type": "done", "sources": sources})
+        yield _sse({"type": "done", "sources": sources, "conversation_id": conversation_id})
 
     return StreamingResponse(event_generator(), media_type="text/event-stream")
