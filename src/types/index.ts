@@ -201,6 +201,48 @@ export interface ChatConversation {
   updatedAt: string;
 }
 
+export type ChatContextKind = "edition" | "story" | "category" | "search";
+
+/**
+ * Where the user is, as far as the chat is concerned. Each page registers
+ * one (see components/chat/ChatPageContextSetter.tsx); the provider turns
+ * the active one into the backend request's `context` automatically so the
+ * user never has to paste an article or explain where they are.
+ */
+export interface ChatPageContext {
+  kind: ChatContextKind;
+  /** Shown in the chat header, e.g. a story title or "Today's edition". */
+  label: string;
+  editionId?: string;
+  storyId?: string;
+  category?: string;
+  searchQuery?: string;
+  resultIds?: string[];
+}
+
+/** A source cited by an AI answer. `index` is the [n] marker used in the text. */
+export interface ChatSource {
+  publisher: string;
+  url: string;
+  title?: string | null;
+  index?: number | null;
+}
+
+export type ChatMessageStatus = "streaming" | "done" | "error";
+
+export interface ChatUiMessage {
+  id: string;
+  role: "user" | "assistant";
+  content: string;
+  status: ChatMessageStatus;
+  createdAt: string;
+  sources?: ChatSource[];
+  /** User messages: the context this question was asked in (and is retried with). */
+  context?: ChatPageContext | null;
+  /** Assistant messages in the error state: why, for the caption under the retry button. */
+  errorDetail?: string;
+}
+
 /** Story context passed from a story page's "Ask AI about this story"
  *  button into the global chat UI (components/chat/ChatProvider.tsx). */
 export interface ChatStoryContext {

@@ -1,7 +1,6 @@
 import {
   mockArticles,
   mockCategories,
-  mockConversation,
   mockContentTypes,
   mockEditions,
   mockRegions,
@@ -19,7 +18,6 @@ import type {
   BriefItem,
   Category,
   CategoryFeed,
-  ChatConversation,
   ContentType,
   Edition,
   HomepageFeed,
@@ -361,36 +359,6 @@ export async function getPersonalizedStories(
     .sort((a, b) => b.score - a.score)
     .slice(0, limit)
     .map(({ article, reasons }) => ({ article, reasons }));
-}
-
-export async function sendChatMessage(message: string): Promise<ChatConversation> {
-  const trimmedMessage = message.trim();
-  const now = new Date().toISOString();
-
-  if (!trimmedMessage) {
-    return mockConversation;
-  }
-
-  return {
-    ...mockConversation,
-    updatedAt: now,
-    messages: [
-      ...mockConversation.messages,
-      {
-        id: `msg-${mockConversation.messages.length + 1}`,
-        role: "user",
-        content: trimmedMessage,
-        createdAt: now,
-      },
-      {
-        id: `msg-${mockConversation.messages.length + 2}`,
-        role: "assistant",
-        content:
-          "Thanks — this is a mock response for Module 01. Backend chat orchestration will be added in a later module.",
-        createdAt: now,
-      },
-    ],
-  };
 }
 
 function byCategorySlugs(slugs: string[], excludeIds: string[] = [], limit = 4): Article[] {
