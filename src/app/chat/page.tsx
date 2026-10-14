@@ -1,18 +1,18 @@
+import { FullChat } from "@/components/chat/FullChat";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { SectionHeading } from "@/components/layout/SectionHeading";
-import { sendChatMessage } from "@/lib/api/client";
 
-export default async function ChatPage() {
-  const conversation = await sendChatMessage("What changed today in AI policy?");
-
+export default function ChatPage() {
   return (
-    <PageContainer narrow>
-      <SectionHeading
-        eyebrow="Assistant"
-        title="AI Assistant"
-        description="Placeholder route for the conversational assistant. Backend integration will be added in later modules. The persistent chat bubble in the bottom-left corner is available on every page in the meantime."
-      />
-      <p className="text-caption">Mock conversation messages: {conversation.messages.length}</p>
+    <PageContainer>
+      <div className="mx-auto flex w-full max-w-4xl flex-col gap-6">
+        <SectionHeading
+          eyebrow="Assistant"
+          title="AI Assistant"
+          description="Ask about stories, topics, and research. Answers are grounded in Daily Signal coverage and cite their sources. Your conversation continues from the chat bubble and back."
+        />
+        <FullChat />
+      </div>
     </PageContainer>
   );
 }
