@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 
+import { ChatPageContextSetter } from "@/components/chat/ChatPageContextSetter";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { ArticleCompletionTracker } from "@/components/story/ArticleCompletionTracker";
 import { ArticleViewTracker } from "@/components/story/ArticleViewTracker";
@@ -30,6 +31,9 @@ export default async function StoryPage({ params }: PageProps<"/story/[id]">) {
 
   return (
     <PageContainer narrow>
+      <ChatPageContextSetter
+        context={{ kind: "story", label: story.title, storyId: story.id }}
+      />
       <ArticleViewTracker storyId={story.id} title={story.title} category={story.category} />
 
       <StoryHeader story={story} />

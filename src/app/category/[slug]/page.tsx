@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 
+import { ChatPageContextSetter } from "@/components/chat/ChatPageContextSetter";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { SectionHeading } from "@/components/layout/SectionHeading";
 import { HeroStory } from "@/components/newspaper/HeroStory";
@@ -17,6 +18,9 @@ export default async function CategoryPage({ params }: PageProps<"/category/[slu
 
   return (
     <PageContainer>
+      <ChatPageContextSetter
+        context={{ kind: "category", label: `${feed.category.name} category`, category: slug }}
+      />
       <SectionHeading eyebrow="Category" title={feed.category.name} description={feed.category.description} />
 
       {feed.featuredStory ? (

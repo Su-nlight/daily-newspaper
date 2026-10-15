@@ -1,3 +1,4 @@
+import { ChatPageContextSetter } from "@/components/chat/ChatPageContextSetter";
 import { EditionMeta } from "@/components/newspaper/EditionMeta";
 import { EmptyEditionState } from "@/components/newspaper/EmptyEditionState";
 import { HeroStory } from "@/components/newspaper/HeroStory";
@@ -30,6 +31,9 @@ export default async function Home() {
 
   return (
     <PageContainer>
+      <ChatPageContextSetter
+        context={{ kind: "edition", label: "Today's edition", editionId: feed.edition.id }}
+      />
       <Masthead date={feed.edition.date} />
       <EditionMeta edition={feed.edition} />
       <HeroStory story={feed.heroStory} />

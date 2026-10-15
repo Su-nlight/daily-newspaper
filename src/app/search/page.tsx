@@ -1,3 +1,4 @@
+import { ChatPageContextSetter } from "@/components/chat/ChatPageContextSetter";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { SectionHeading } from "@/components/layout/SectionHeading";
 import { SearchForm } from "@/components/search/SearchForm";
@@ -50,6 +51,16 @@ export default async function SearchPage({ searchParams }: PageProps<"/search">)
 
   return (
     <PageContainer narrow>
+      {results.length > 0 ? (
+        <ChatPageContextSetter
+          context={{
+            kind: "search",
+            label: filters.query ? `Search results for “${filters.query}”` : "Search results",
+            searchQuery: filters.query,
+            resultIds: results.slice(0, 20).map((article) => article.id),
+          }}
+        />
+      ) : null}
       <SectionHeading eyebrow="Search" title="Search the Archive" />
       <SearchForm
         filters={filters}

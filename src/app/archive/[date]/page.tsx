@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { ChatPageContextSetter } from "@/components/chat/ChatPageContextSetter";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { HeroStory } from "@/components/newspaper/HeroStory";
 import { NewspaperSection } from "@/components/newspaper/NewspaperSection";
@@ -23,6 +24,13 @@ export default async function EditionArchivePage({ params }: PageProps<"/archive
 
   return (
     <PageContainer>
+      <ChatPageContextSetter
+        context={{
+          kind: "edition",
+          label: `Edition of ${formatDisplayDate(edition.date)}`,
+          editionId: edition.id,
+        }}
+      />
       <div className="flex flex-col gap-4 border-b border-border pb-8">
         <Link href="/archive" className="text-caption inline-flex w-fit items-center gap-1.5 text-accent hover:underline">
           <span aria-hidden="true">←</span>
