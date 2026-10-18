@@ -30,9 +30,16 @@ def get_groq_client() -> Groq:
     return Groq(api_key=settings.groq_api_key, timeout=settings.groq_timeout_seconds)
 
 
-def generate_completion(messages: list[dict[str, str]]) -> str:
+def generate_completion(
+    messages: list[dict[str, str]],
+    *,
+    temperature: float | None = None,
+    max_tokens: int | None = None,
+) -> str:
     """Single-shot (non-streaming) completion. Used by the standard
-    /api/chat graph path."""
+    /api/chat graph path and by the Module 09 pipeline (which passes a low
+    temperature: summaries should be faithful, not creative). Omitted
+    arguments fall back to the configured defaults."""
     settings = get_settings()
     client = get_groq_client()
 
@@ -40,8 +47,8 @@ def generate_completion(messages: list[dict[str, str]]) -> str:
         response = client.chat.completions.create(
             model=settings.groq_model,
             messages=messages,  # type: ignore[arg-type]
-            temperature=settings.groq_temperature,
-            max_tokens=settings.groq_max_tokens,
+            temperature=settings.groq_temperature if temperature is None else temperature,
+            max_tokens=settings.groq_max_tokens if max_tokens is None else max_tokens,
         )
     except RateLimitError as exc:
         raise LLMRequestError("Groq rate limit exceeded. Please try again shortly.") from exc
