@@ -10,12 +10,16 @@
 - Module 06 Search, Saved Stories and Archive
 - Module 07 LangGraph + Groq Backend
 - Module 08 AI Chat Integration
+- Module 09 News and Daily Edition Pipeline (**backend only** — see Known issues)
 
 ## Current
 
-Module 08 is complete. **Verified with a real FastAPI server and a stand-in for
-Groq, not with a real Groq key or a real browser** — see Known issues.
-Awaiting Module 09.
+Module 09 is complete **on the backend**: a real ingestion → edition pipeline
+(`backend/app/pipeline/`), an enriched `GET /api/edition/today`, and a CLI for
+the scheduler. **Verified with fixtures and a scripted stand-in for Groq — never
+against real feeds, real APIs or a real Groq key** (no network in the build
+sandbox) — see Known issues. **The frontend is untouched and still mock-backed;
+cutting it over to the Edition API is the natural next step.** Awaiting Module 10.
 
 ## Running it
 
@@ -81,7 +85,7 @@ the Groq key lives only in `backend/.env` and never reaches the browser.
 ```
 POST /api/chat          single-shot, runs the full LangGraph
 POST /api/chat/stream   SSE: {"type":"token","content"} ... {"type":"done","sources","conversation_id"} | {"type":"error","message"}
-GET  /api/edition/today | /api/edition/{date}
+GET  /api/edition/today | /api/edition/{date}   (+ optional preference query params, below)
 GET  /api/stories | /api/stories/{id}
 GET  /api/search?q=&category=&source=&topic=
 GET  /api/health
@@ -92,6 +96,30 @@ source:  { publisher, url, title, index }   # index = the [n] marker used in the
 ```
 
 `history` and `search_*` context were added in M8 (backwards compatible).
+
+**Edition API (M9).** `Edition` keeps its M7 fields (`id, date, headline, summary,
+stories`) and adds `metadata`, `top_story_ids`, `sections`, `brief`,
+`personalized`. `stories` is the single master list in rank order (hero first);
+everything else **references stories by id** — clients join on `stories[].id`
+(this is where `getHomepageFeed`-style composition belongs).
+
+```
+metadata:     { generated_at, timezone, pipeline_version, story_count, source_count,
+                ai_summarized_count, status: complete|degraded|seed, warnings[],
+                personalization_applied }
+sections:     [{ slug, title, description, categories[], story_ids[] }]   # top stories excluded
+brief:        [{ id, headline, summary }]            # ~60 seconds of reading
+personalized: [{ story_id, level: low|medium|high, reasons[] }]   # only when preferences are sent
+Article (+M9): content, entities[], importance: lead|major|standard|minor,
+               personal_relevance: { level, reasons[] }, sources: [{publisher,url,title,
+               published_at,source_id}], related_ids[], region, ai_generated
+               (`source`/`source_url` = the primary source; `sources` = all of them)
+preferences:  ?topics=topic-agents:0.9,topic-rag &regions=india &sources=… &content_types=research-monitoring
+```
+There are **no numeric scores anywhere** in the response (a test enforces it).
+`/api/edition/today` means "the latest edition", not "calendar today": if a
+scheduled run is late, yesterday's edition (see `date`, `metadata.generated_at`)
+beats a 404.
 
 ## Chat architecture (Module 08)
 
@@ -128,7 +156,42 @@ Tests (new tooling in M8): `npm test` runs vitest + Testing Library in jsdom —
 - **Corpus:** `backend/app/data/corpus.json` is **generated from the frontend mock data** by `npm run export:corpus` (`scripts/export-corpus.mjs`) so chat is grounded in exactly the stories the UI shows (15 articles, 4 editions, plus long-form detail for the 6 stories that have it). Re-run it whenever `src/data/mock-newspaper.ts` changes.
 - Default model is `openai/gpt-oss-20b` (the previous default, `llama-3.3-70b-versatile`, is Enterprise-only on Groq and returns 404 for standard keys).
 
+## Pipeline architecture (Module 09)
+
+`backend/app/pipeline/` — one small module per stage, plain functions, no framework:
+
+```
+registry (sources JSON) → adapters/* → fetch → normalize → [SQLite store] → dedupe/cluster
+  → stories (stable ids, metadata, classify) → rank → summarize(+grounding) → validate_sources
+  → edition → store ; CLI: python -m app.pipeline run|sources|status
+```
+
+- **Adapters** (`adapters/`): `rss` (+`blog`), `arxiv`, `github` (releases), `nvd` (CVEs ≥ `min_cvss`), `news_api` (NewsAPI-style). Each emits `RawItem`; register a new provider with `register_adapter(kind, adapter)` — nothing else changes. Sources live in `app/data/pipeline_sources.json` (no code to add a feed); credentials are Settings fields referenced by name, never in the file.
+- **Fetch** runs sources concurrently and in isolation; a failing source lands in the run report, never aborts the run. Responses are size-capped, retried once, XML is parsed with `defusedxml`, and URLs must be public http(s) (no `javascript:`, `file:`, localhost/private IPs).
+- **Dedupe** (`dedupe.py`): canonical URL, normalized title and CVE-id set merge outright; otherwise TF-IDF cosine over title + lead summary. Guards: 48 h window, different CVE ids never merge, a publisher never merges with itself on similarity, average-link (no A~B~C chaining), minimum distinctive text. `SimilarityModel` is the seam for real embeddings.
+- **Story ids are assigned once and persisted** (`stories.assign_story_ids`): a cluster containing an already-known article inherits that story's id; only all-new clusters mint one. That is what makes reruns update instead of duplicate while stories gain sources.
+- **Classify / metadata**: rule-based (`taxonomy.py`) — category slugs, topic ids/names and region ids match the frontend; 4 topics are new (LLMs, AI Policy, Semiconductors, Open Source). Entities: CVE ids, a gazetteer, acronyms, body proper nouns.
+- **Rank** (`rank.py`): freshness · importance · topic · personal · source quality · geographic, explicit `RankWeights`. Scores stay in the backend; the API gets an `importance` tier and `personal_relevance` reasons (wording mirrors the frontend's `scoreArticle`). Personalization is applied per request in `api/edition.py`; the stored edition is shared.
+- **Summarize** (`summarize.py` + `grounding.py`): the LLM only sees the story's own source excerpts. Its JSON output is *verified* — any number, quote, URL, domain or proper noun not in the evidence rejects the output and the story gets deterministic **extractive** text; key facts are checked against the single source they cite. Headlines, URLs and attribution always come from metadata. Structured facts (CVSS, release tag, arXiv authors) come straight from metadata. Budgeted (`PIPELINE_MAX_LLM_STORIES`, best stories first); unchanged stories reuse their summary.
+- **Validate sources**: ≥1 valid, configured, attributable source per story; no URLs inside generated text.
+- **Idempotent**: `articles.canonical_url` UNIQUE, stable story ids, editions keyed by date with a content hash (identical rebuild writes nothing), an advisory lock against overlapping runs, and a guard that never replaces a healthy edition with one under half its size.
+- **Read side** (`services/sources.py`): `CONTENT_SOURCE=auto|pipeline|seed`. In `auto`, pipeline content is served once an edition exists; listing/search never mix in seed stories, but explicit id/date lookups fall back to the seed corpus so the frontend's mock story ids keep working in chat during the migration.
+
 ## Known issues
+
+**News pipeline (M9)**
+- **Never run against real feeds, APIs or Groq.** The build sandbox has no outbound network. Everything is tested with fixtures (`httpx.MockTransport`) and a scripted fake LLM. The feed URLs in `pipeline_sources.json` were written from memory and are **unverified** — run `python -m app.pipeline run` and read the per-source report; fix or disable what fails. Real feeds will expose parsing edge cases the fixtures don't.
+- **Thresholds are tuned on a small fixture set.** Dedupe thresholds (0.40 / 0.28), classification keyword weights, ranking weights and the grounding verifier's strictness need tuning on real data. Watch `summary_fallback_reasons` in the run report: a high `ungrounded` share means the verifier is stricter than it needs to be (or the prompt needs work).
+- Similarity is lexical (TF-IDF), so paraphrases with little shared vocabulary won't cluster; English only.
+- `why_it_matters` is **not generated** (implications aren't facts in the evidence), so pipeline stories have it `null`; the story page must tolerate that.
+- Only feed-provided summaries/excerpts are stored — no full-article scraping. A story's `content` is Daily Signal's own text (generated or a ≤2-sentence extract), not a republished article.
+- No link-liveness check; no image fetching/validation beyond URL shape; no ads/paywall detection.
+- **The frontend still reads mock data.** Chat resolves the mock story ids via the seed fallback, but until `getHomepageFeed` etc. consume `/api/edition/today`, the UI and the pipeline show different stories. Field mapping: backend is snake_case (`source_url`, `published_at`, `image_url`); `Article.importance` is a tier string; see "Edition API" above.
+- The chat context block cites a story's *primary* source only; `validate_format` doesn't yet list a cluster's other publications.
+- SQLite is single-node (WAL, per-call connections). `Store` is the seam if you need Postgres. Stories/articles are pruned after `PIPELINE_RETENTION_DAYS` (90); editions are kept with their own story snapshot.
+- `EDITION_TIMEZONE` defaults to UTC, so "today" rolls over at 00:00 UTC. Set it (e.g. `Asia/Kolkata`) before scheduling.
+- There is deliberately **no HTTP endpoint to trigger a run** (the backend has no auth and a run spends LLM budget). Scheduling = run the CLI.
+
 
 **Chat / backend (M7–M8)**
 - **Never exercised against real Groq or a real browser.** `api.groq.com` isn't reachable from the build sandbox. The frontend was verified (a) in jsdom with a mocked network (26 tests) and (b) by driving the real `streamChatMessage` against the real FastAPI server with a stand-in for `llm.stream_completion`. Real model output, latency and rate limits are untested, and **no one has looked at the chat UI in an actual browser** — layout, spacing, dark mode and the compact panel's size on small screens are unverified visually.
@@ -172,3 +235,11 @@ Tests (new tooling in M8): `npm test` runs vitest + Testing Library in jsdom —
 - `getStory` returns `StoryDetail`; `getSavedStories` returns the article join; `getPersonalizedStories` never exposes a numeric score; personalization copy must not claim to be AI-powered.
 - `recordSignal()` is the single call site for behavioral signals.
 - `UserPreferences` keeps the Module 05 shape (`topics`, `regions`, `sources`, `contentTypes`, `readingTime`).
+
+**News pipeline (M9)**
+- The pipeline stays provider-agnostic: providers enter only through `adapters/` + the sources JSON. Credentials are Settings fields referenced by name; never put a key in the JSON or in a URL.
+- **Generated text must pass `grounding.check_text`** against the evidence the model was given; source URLs and attribution come only from metadata. Don't loosen the verifier without adding tests for what it will now let through.
+- **Story ids are assigned once and persisted.** Never derive a story's id from its current cluster membership alone — that would duplicate stories each time one gains a source.
+- Reruns must stay idempotent (`tests/pipeline/test_runner_store.py` pins it). The API never exposes numeric scores (`test_no_raw_scores_are_exposed_anywhere`).
+- No unauthenticated endpoint that triggers a pipeline run.
+- Listing/search must not mix the seed corpus into real pipeline results.
