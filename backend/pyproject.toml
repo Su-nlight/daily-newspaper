@@ -4,3 +4,10 @@ target-version = "py312"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "SIM"]
+
+[tool.ruff.lint.per-file-ignores]
+# Fixture data is prose; wrapping it hurts readability.
+# Test data strings and tiny helper lambdas read better unwrapped.
+"tests/pipeline/*.py" = ["E501", "E731"]
+# Word lists as split() strings are easier to read and diff than quoted lists.
+"app/pipeline/*.py" = ["SIM905"]

@@ -110,7 +110,7 @@ and streams tokens from `llm.stream_completion()` as they arrive from Groq.
 | ------ | --------------------- | ------------------------------------------ |
 | POST   | `/api/chat`            | Single-shot chat (runs the full graph)    |
 | POST   | `/api/chat/stream`     | SSE streaming chat                        |
-| GET    | `/api/edition/today`   | Today's edition                           |
+| GET    | `/api/edition/today`   | Latest edition (+ optional preferences)   |
 | GET    | `/api/edition/{date}`  | Edition by date (`YYYY-MM-DD`)            |
 | GET    | `/api/stories`         | List stories, optional `?category=`       |
 | GET    | `/api/stories/{id}`    | Single story                              |
@@ -138,3 +138,67 @@ Everything except `message` is optional. `history` (last 8 turns are used)
 makes follow-ups work; the `context` fields scope retrieval (a story id wins,
 then search results, then category, then edition). Each returned source has an
 `index` matching the `[n]` citation marker in the answer text.
+
+## News and daily edition pipeline (Module 09)
+
+Real content replaces the mock corpus. Until the first run the API serves the
+seed corpus (`CONTENT_SOURCE=auto`); afterwards it serves generated editions.
+
+```bash
+python -m app.pipeline sources          # configured sources, active/inactive
+python -m app.pipeline run              # fetch -> process -> publish today's edition
+python -m app.pipeline run --no-llm     # extractive summaries only (no Groq calls)
+python -m app.pipeline run --no-fetch   # rebuild from already-stored articles
+python -m app.pipeline run --date 2026-11-03 --json
+python -m app.pipeline status           # latest edition and recent runs
+```
+
+`run` exits 0 for ok/degraded/skipped and 1 when no edition could be produced.
+It prints a per-source health report - **read it on the first run**: the feed
+URLs in `app/data/pipeline_sources.json` are unverified, and it is where you
+add, remove or disable sources (no code change needed).
+
+### Scheduling
+
+The pipeline is idempotent, so scheduling is "run the CLI once a day" - running
+it more often is harmless (unchanged stories reuse their summaries, an
+identical edition writes nothing, and an advisory lock stops overlapping runs).
+Set `EDITION_TIMEZONE` first, and make sure the server and the job share
+`DATABASE_PATH`.
+
+```cron
+# 06:30 every day, from the backend directory
+30 6 * * *  cd /path/to/backend && .venv/bin/python -m app.pipeline run >> pipeline.log 2>&1
+```
+
+systemd timers, a GitHub Actions `schedule:` job or a cloud scheduler work the
+same way. There is intentionally no HTTP endpoint to trigger a run: the backend
+has no auth, and a run spends Groq budget.
+
+### Output
+
+`GET /api/edition/today` returns `metadata`, the ranked `stories` (each with its
+full `sources` list, `importance` tier, `entities`, `related_ids`), `top_story_ids`,
+`sections`, the 60-second `brief` and - when preferences are supplied -
+`personalized`:
+
+```
+/api/edition/today?topics=topic-agents:0.9,topic-rag&regions=india&sources=source-tech-ledger
+```
+
+Stories, sections, the brief and personalized entries reference each other by
+story id. No numeric scores are ever returned.
+
+### Content source
+
+`CONTENT_SOURCE=auto|pipeline|seed` (see `.env.example`). Use `pipeline` once the
+frontend reads real editions; `seed` reproduces pre-Module-09 behaviour.
+
+### How summaries stay honest
+
+The model only sees each story's own source excerpts, and its output is
+*verified* before use: any number, quote, URL or proper noun that is not in the
+evidence rejects the summary, and the story falls back to extractive text taken
+directly from the sources. Source links and attribution are never taken from
+model output. The run report's `summary_fallback_reasons` shows how often that
+happens.
