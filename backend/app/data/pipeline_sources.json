@@ -1,0 +1,28 @@
+{
+  "_note": "Feed URLs were written without network access and are UNVERIFIED. Run `python -m app.pipeline sources` and `run`, then check the per-source report. Add, remove or disable sources freely: no code change needed. Credentials are never stored here - api_key_setting names a Settings field (see backend/.env.example).",
+  "sources": [
+    {"id": "techcrunch", "name": "TechCrunch", "kind": "rss", "url": "https://techcrunch.com/feed/", "quality": 0.8, "default_category": "software-engineering"},
+    {"id": "theverge", "name": "The Verge", "kind": "rss", "url": "https://www.theverge.com/rss/index.xml", "quality": 0.8, "default_category": "software-engineering"},
+    {"id": "arstechnica", "name": "Ars Technica", "kind": "rss", "url": "https://feeds.arstechnica.com/arstechnica/index", "quality": 0.8, "default_category": "software-engineering"},
+    {"id": "krebs", "name": "Krebs on Security", "kind": "rss", "url": "https://krebsonsecurity.com/feed/", "quality": 0.8, "default_category": "cybersecurity"},
+    {"id": "bleepingcomputer", "name": "BleepingComputer", "kind": "rss", "url": "https://www.bleepingcomputer.com/feed/", "quality": 0.7, "default_category": "cybersecurity"},
+    {"id": "thehackernews", "name": "The Hacker News", "kind": "rss", "url": "https://feeds.feedburner.com/TheHackersNews", "quality": 0.65, "default_category": "cybersecurity"},
+    {"id": "inc42", "name": "Inc42", "kind": "rss", "url": "https://inc42.com/feed/", "quality": 0.6, "region": "india", "default_category": "world"},
+    {"id": "medianama", "name": "MEDIANAMA", "kind": "rss", "url": "https://www.medianama.com/feed/", "quality": 0.65, "region": "india", "default_category": "world"},
+
+    {"id": "github-blog", "name": "GitHub Blog", "kind": "blog", "url": "https://github.blog/feed/", "quality": 0.85, "default_category": "software-engineering"},
+    {"id": "cloudflare-blog", "name": "Cloudflare Blog", "kind": "blog", "url": "https://blog.cloudflare.com/rss/", "quality": 0.85, "default_category": "software-engineering"},
+    {"id": "aws-blog", "name": "AWS News Blog", "kind": "blog", "url": "https://aws.amazon.com/blogs/aws/feed/", "quality": 0.85, "default_category": "software-engineering"},
+    {"id": "google-ai-blog", "name": "Google AI Blog", "kind": "blog", "url": "https://blog.google/technology/ai/rss/", "quality": 0.85, "default_category": "ai"},
+    {"id": "openai-news", "name": "OpenAI", "kind": "blog", "url": "https://openai.com/news/rss.xml", "quality": 0.85, "default_category": "ai"},
+    {"id": "huggingface-blog", "name": "Hugging Face Blog", "kind": "blog", "url": "https://huggingface.co/blog/feed.xml", "quality": 0.8, "default_category": "ai"},
+
+    {"id": "arxiv-ai", "name": "arXiv", "kind": "arxiv", "url": "https://export.arxiv.org/api/query", "quality": 0.7, "default_category": "research", "max_items": 15, "params": {"search_query": "cat:cs.AI OR cat:cs.CL"}},
+
+    {"id": "github-releases", "name": "GitHub", "kind": "github", "url": "https://api.github.com", "quality": 0.7, "default_category": "software-engineering", "max_items": 12, "api_key_setting": "github_token", "api_key_required": false, "params": {"repos": ["langchain-ai/langgraph", "vercel/next.js", "rust-lang/rust", "pydantic/pydantic"]}},
+
+    {"id": "nvd-critical", "name": "NIST NVD", "kind": "nvd", "url": "https://services.nvd.nist.gov/rest/json/cves/2.0", "quality": 0.95, "default_category": "cybersecurity", "max_items": 10, "api_key_setting": "nvd_api_key", "api_key_required": false, "params": {"min_cvss": 9.0}},
+
+    {"id": "newsapi-tech", "name": "NewsAPI", "kind": "news_api", "enabled": false, "url": "https://newsapi.org/v2/top-headlines", "quality": 0.75, "default_category": "world", "max_items": 30, "api_key_setting": "newsapi_key", "params": {"category": "technology", "language": "en"}}
+  ]
+}
